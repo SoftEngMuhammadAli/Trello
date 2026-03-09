@@ -5,4 +5,4 @@ function getPagination(query) {
   return { page, limit, skip };
 }
 
-module.exports = { getPagination };
+export { getPagination };

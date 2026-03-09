@@ -1,6 +1,7 @@
 # Trello Clone (MERN)
 
 Complete Trello-style clone built with MongoDB, Express, React (Vite), and Node.js.
+Backend is configured as native ESM (`"type": "module"`).
 
 ## Features
 - JWT auth with refresh tokens (HTTP-only cookie)
@@ -11,6 +12,7 @@ Complete Trello-style clone built with MongoDB, Express, React (Vite), and Node.
 - Search endpoint (lists/cards/comments)
 - Input validation with Joi
 - Security middleware: Helmet, CORS, rate limiting, XSS clean, mongo sanitize
+- Swagger API docs at `/api/docs` (OpenAPI 3)
 - Tailwind frontend, Redux Toolkit state, router lazy loading
 - Unit + integration tests
 - Docker + deployment docs
@@ -19,35 +21,35 @@ Complete Trello-style clone built with MongoDB, Express, React (Vite), and Node.
 
 ```text
 .
-+- client/
-¦  +- src/
-¦  ¦  +- api/
-¦  ¦  +- app/
-¦  ¦  +- components/
-¦  ¦  +- features/
-¦  ¦  +- hooks/
-¦  ¦  +- layouts/
-¦  ¦  +- pages/
-¦  ¦  +- styles/
-¦  ¦  +- utils/
-¦  +- Dockerfile
-¦  +- ...
-+- server/
-¦  +- src/
-¦  ¦  +- config/
-¦  ¦  +- controllers/
-¦  ¦  +- middleware/
-¦  ¦  +- models/
-¦  ¦  +- routes/
-¦  ¦  +- services/
-¦  ¦  +- sockets/
-¦  ¦  +- utils/
-¦  ¦  +- validators/
-¦  +- scripts/seed.js
-¦  +- tests/
-¦  +- Dockerfile
-+- docs/DEPLOYMENT.md
-+- docker-compose.yml
+├─ client/
+│  ├─ src/
+│  │  ├─ api/
+│  │  ├─ app/
+│  │  ├─ components/
+│  │  ├─ features/
+│  │  ├─ hooks/
+│  │  ├─ layouts/
+│  │  ├─ pages/
+│  │  ├─ styles/
+│  │  └─ utils/
+│  ├─ Dockerfile
+│  └─ ...
+├─ server/
+│  ├─ src/
+│  │  ├─ config/
+│  │  ├─ controllers/
+│  │  ├─ middleware/
+│  │  ├─ models/
+│  │  ├─ routes/
+│  │  ├─ services/
+│  │  ├─ sockets/
+│  │  ├─ utils/
+│  │  └─ validators/
+│  ├─ scripts/seed.js
+│  ├─ tests/
+│  └─ Dockerfile
+├─ docs/DEPLOYMENT.md
+└─ docker-compose.yml
 ```
 
 ## Environment Variables
@@ -88,6 +90,7 @@ npm run dev
 
 Backend: `http://localhost:5000`
 Frontend: `http://localhost:5173`
+Swagger Docs: `http://localhost:5000/api/docs`
 
 ### Seed Data (Optional)
 ```bash

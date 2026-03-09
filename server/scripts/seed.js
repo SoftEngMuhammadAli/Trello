@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const connectDb = require('../src/config/db');
-const User = require('../src/models/User');
-const Workspace = require('../src/models/Workspace');
-const Board = require('../src/models/Board');
-const List = require('../src/models/List');
-const Card = require('../src/models/Card');
+import mongoose from 'mongoose';
+import connectDb from '../src/config/db.js';
+import User from '../src/models/User.js';
+import Workspace from '../src/models/Workspace.js';
+import Board from '../src/models/Board.js';
+import List from '../src/models/List.js';
+import Card from '../src/models/Card.js';
 
 async function seed() {
   await connectDb();

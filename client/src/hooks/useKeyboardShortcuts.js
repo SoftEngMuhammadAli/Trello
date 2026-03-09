@@ -14,5 +14,3 @@ export function useKeyboardShortcuts(shortcuts = []) {
     return () => window.removeEventListener('keydown', handler);
   }, [shortcuts]);
 }
-
-

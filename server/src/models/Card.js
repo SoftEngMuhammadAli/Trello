@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const cardLabelSchema = new mongoose.Schema(
   {
@@ -42,4 +42,4 @@ cardSchema.index({ listId: 1, position: 1 });
 cardSchema.index({ boardId: 1, archived: 1 });
 cardSchema.index({ title: 'text', description: 'text' });
 
-module.exports = mongoose.model('Card', cardSchema);
+export default mongoose.model('Card', cardSchema);

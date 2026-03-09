@@ -1,5 +1,5 @@
-const { Server } = require('socket.io');
-const { verifyAccessToken } = require('../services/token.service');
+import { Server } from 'socket.io';
+import { verifyAccessToken } from '../services/token.service.js';
 
 function initSocket(server, clientUrl) {
   const io = new Server(server, {
@@ -40,4 +40,4 @@ function initSocket(server, clientUrl) {
   return io;
 }
 
-module.exports = initSocket;
+export default initSocket;

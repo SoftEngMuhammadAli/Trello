@@ -53,5 +53,3 @@ const workspaceSlice = createSlice({
 });
 
 export default workspaceSlice.reducer;
-
-

@@ -1,8 +1,8 @@
-const http = require('http');
-const app = require('./app');
-const env = require('./config/env');
-const connectDb = require('./config/db');
-const initSocket = require('./sockets');
+import http from 'http';
+import app from './app.js';
+import env from './config/env.js';
+import connectDb from './config/db.js';
+import initSocket from './sockets/index.js';
 
 async function bootstrap() {
   await connectDb();

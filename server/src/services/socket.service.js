@@ -3,4 +3,4 @@ function emitBoardEvent(req, boardId, event, payload) {
   req.app.locals.io.to(`board:${boardId}`).emit(event, payload);
 }
 
-module.exports = { emitBoardEvent };
+export { emitBoardEvent };

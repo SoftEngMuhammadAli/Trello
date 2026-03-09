@@ -1,12 +1,12 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const {
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import {
   issueAuthTokens,
   verifyAccessToken,
   verifyRefreshToken,
-} = require('../src/services/token.service');
+} from '../src/services/token.service.js';
 
 let mongoServer;
 

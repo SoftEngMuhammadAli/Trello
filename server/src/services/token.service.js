@@ -1,7 +1,7 @@
-const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const env = require('../config/env');
-const RefreshToken = require('../models/RefreshToken');
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import env from '../config/env.js';
+import RefreshToken from '../models/RefreshToken.js';
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -80,7 +80,7 @@ async function revokeAllUserRefreshTokens(userId) {
   await RefreshToken.deleteMany({ userId });
 }
 
-module.exports = {
+export {
   issueAuthTokens,
   verifyAccessToken,
   verifyRefreshToken,
@@ -88,4 +88,3 @@ module.exports = {
   revokeRefreshToken,
   revokeAllUserRefreshTokens,
 };
-

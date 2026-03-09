@@ -25,5 +25,3 @@ describe('normalizeBoard', () => {
     expect(normalized.cardsById.c2.listId).toBe('l1');
   });
 });
-
-

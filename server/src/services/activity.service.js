@@ -1,4 +1,4 @@
-const Board = require('../models/Board');
+import Board from '../models/Board.js';
 
 async function pushBoardActivity(boardId, action, userId, meta = {}) {
   await Board.findByIdAndUpdate(boardId, {
@@ -13,4 +13,4 @@ async function pushBoardActivity(boardId, action, userId, meta = {}) {
   });
 }
 
-module.exports = { pushBoardActivity };
+export { pushBoardActivity };

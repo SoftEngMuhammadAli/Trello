@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 const createWorkspaceSchema = Joi.object({
   name: Joi.string().min(2).max(120).required(),
@@ -18,4 +18,4 @@ const updateWorkspaceSchema = Joi.object({
     .optional(),
 }).min(1);
 
-module.exports = { createWorkspaceSchema, updateWorkspaceSchema };
+export { createWorkspaceSchema, updateWorkspaceSchema };

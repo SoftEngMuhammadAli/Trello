@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const workspaceMemberSchema = new mongoose.Schema(
   {
@@ -22,4 +22,4 @@ const workspaceSchema = new mongoose.Schema(
 workspaceSchema.index({ createdBy: 1, createdAt: -1 });
 workspaceSchema.index({ name: 'text', description: 'text' });
 
-module.exports = mongoose.model('Workspace', workspaceSchema);
+export default mongoose.model('Workspace', workspaceSchema);

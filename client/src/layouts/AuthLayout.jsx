@@ -21,5 +21,3 @@ function AuthLayout({ title, subtitle, children, footer }) {
 }
 
 export default AuthLayout;
-
-

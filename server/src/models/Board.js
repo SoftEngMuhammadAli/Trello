@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const activitySchema = new mongoose.Schema(
   {
@@ -32,4 +32,4 @@ const boardSchema = new mongoose.Schema(
 boardSchema.index({ workspaceId: 1, createdAt: -1 });
 boardSchema.index({ title: 'text' });
 
-module.exports = mongoose.model('Board', boardSchema);
+export default mongoose.model('Board', boardSchema);

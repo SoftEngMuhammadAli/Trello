@@ -1,6 +1,6 @@
-const path = require('path');
-const multer = require('multer');
-const env = require('../config/env');
+import path from 'path';
+import multer from 'multer';
+import env from '../config/env.js';
 
 const storage = multer.diskStorage({
   destination: path.resolve(process.cwd(), env.uploadDir),
@@ -17,4 +17,4 @@ const upload = multer({
   },
 });
 
-module.exports = upload;
+export default upload;

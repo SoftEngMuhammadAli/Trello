@@ -1,5 +1,5 @@
-const { StatusCodes } = require('http-status-codes');
-const ApiError = require('../utils/ApiError');
+import { StatusCodes } from 'http-status-codes';
+import ApiError from '../utils/ApiError.js';
 
 function validate(schema, target = 'body') {
   return (req, _res, next) => {
@@ -21,4 +21,4 @@ function validate(schema, target = 'body') {
   };
 }
 
-module.exports = validate;
+export default validate;

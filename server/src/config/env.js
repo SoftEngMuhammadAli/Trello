@@ -1,4 +1,4 @@
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -17,4 +17,4 @@ const env = {
   rateLimitMax: Number(process.env.RATE_LIMIT_MAX || 300),
 };
 
-module.exports = env;
+export default env;

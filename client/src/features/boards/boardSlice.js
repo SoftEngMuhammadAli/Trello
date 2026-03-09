@@ -20,23 +20,29 @@ export const createBoard = createAsyncThunk('boards/createBoard', async (payload
   }
 });
 
-export const fetchBoardFull = createAsyncThunk('boards/fetchBoardFull', async (boardId, thunkAPI) => {
-  try {
-    const { data } = await api.get(`/boards/${boardId}/full`);
-    return normalizeBoard(data.board);
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to fetch board');
-  }
-});
+export const fetchBoardFull = createAsyncThunk(
+  'boards/fetchBoardFull',
+  async (boardId, thunkAPI) => {
+    try {
+      const { data } = await api.get(`/boards/${boardId}/full`);
+      return normalizeBoard(data.board);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to fetch board');
+    }
+  },
+);
 
-export const updateBoard = createAsyncThunk('boards/updateBoard', async ({ boardId, payload }, thunkAPI) => {
-  try {
-    const { data } = await api.put(`/boards/${boardId}`, payload);
-    return data.board;
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update board');
-  }
-});
+export const updateBoard = createAsyncThunk(
+  'boards/updateBoard',
+  async ({ boardId, payload }, thunkAPI) => {
+    try {
+      const { data } = await api.put(`/boards/${boardId}`, payload);
+      return data.board;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update board');
+    }
+  },
+);
 
 export const createList = createAsyncThunk('boards/createList', async (payload, thunkAPI) => {
   try {
@@ -47,14 +53,17 @@ export const createList = createAsyncThunk('boards/createList', async (payload, 
   }
 });
 
-export const updateList = createAsyncThunk('boards/updateList', async ({ listId, payload }, thunkAPI) => {
-  try {
-    const { data } = await api.put(`/lists/${listId}`, payload);
-    return data.list;
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update list');
-  }
-});
+export const updateList = createAsyncThunk(
+  'boards/updateList',
+  async ({ listId, payload }, thunkAPI) => {
+    try {
+      const { data } = await api.put(`/lists/${listId}`, payload);
+      return data.list;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update list');
+    }
+  },
+);
 
 export const reorderList = createAsyncThunk(
   'boards/reorderList',
@@ -77,23 +86,29 @@ export const createCard = createAsyncThunk('boards/createCard', async (payload, 
   }
 });
 
-export const updateCard = createAsyncThunk('boards/updateCard', async ({ cardId, payload }, thunkAPI) => {
-  try {
-    const { data } = await api.put(`/cards/${cardId}`, payload);
-    return data.card;
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update card');
-  }
-});
+export const updateCard = createAsyncThunk(
+  'boards/updateCard',
+  async ({ cardId, payload }, thunkAPI) => {
+    try {
+      const { data } = await api.put(`/cards/${cardId}`, payload);
+      return data.card;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update card');
+    }
+  },
+);
 
-export const moveCard = createAsyncThunk('boards/moveCard', async ({ cardId, payload }, thunkAPI) => {
-  try {
-    await api.put(`/cards/${cardId}/move`, payload);
-    return { cardId, payload };
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to move card');
-  }
-});
+export const moveCard = createAsyncThunk(
+  'boards/moveCard',
+  async ({ cardId, payload }, thunkAPI) => {
+    try {
+      await api.put(`/cards/${cardId}/move`, payload);
+      return { cardId, payload };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to move card');
+    }
+  },
+);
 
 export const deleteCard = createAsyncThunk('boards/deleteCard', async (cardId, thunkAPI) => {
   try {
@@ -169,7 +184,10 @@ const boardSlice = createSlice({
     },
     pushRecentBoard(state, action) {
       const boardId = action.payload;
-      state.recentBoardIds = [boardId, ...state.recentBoardIds.filter((id) => id !== boardId)].slice(0, 8);
+      state.recentBoardIds = [
+        boardId,
+        ...state.recentBoardIds.filter((id) => id !== boardId),
+      ].slice(0, 8);
     },
   },
   extraReducers: (builder) => {
@@ -249,9 +267,9 @@ const boardSlice = createSlice({
         const toListId = action.payload.payload.targetListId;
         const toIndex = action.payload.payload.targetPosition;
 
-        state.currentBoard.listsById[fromListId].cardIds = state.currentBoard.listsById[fromListId].cardIds.filter(
-          (id) => id !== card._id,
-        );
+        state.currentBoard.listsById[fromListId].cardIds = state.currentBoard.listsById[
+          fromListId
+        ].cardIds.filter((id) => id !== card._id);
 
         const toListCards = [...state.currentBoard.listsById[toListId].cardIds];
         toListCards.splice(toIndex, 0, card._id);
@@ -287,5 +305,3 @@ const boardSlice = createSlice({
 
 export const { setFilters, clearSearchResults, pushRecentBoard } = boardSlice.actions;
 export default boardSlice.reducer;
-
-

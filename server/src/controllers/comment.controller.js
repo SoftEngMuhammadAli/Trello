@@ -1,12 +1,12 @@
-const { StatusCodes } = require('http-status-codes');
-const Comment = require('../models/Comment');
-const Card = require('../models/Card');
-const Board = require('../models/Board');
-const Workspace = require('../models/Workspace');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
-const { pushBoardActivity } = require('../services/activity.service');
-const { emitBoardEvent } = require('../services/socket.service');
+import { StatusCodes } from 'http-status-codes';
+import Comment from '../models/Comment.js';
+import Card from '../models/Card.js';
+import Board from '../models/Board.js';
+import Workspace from '../models/Workspace.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { pushBoardActivity } from '../services/activity.service.js';
+import { emitBoardEvent } from '../services/socket.service.js';
 
 async function assertCardBoardAccess(cardId, userId) {
   const card = await Card.findById(cardId);
@@ -106,7 +106,7 @@ const deleteComment = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Comment deleted successfully' });
 });
 
-module.exports = {
+export {
   createComment,
   getComments,
   updateComment,

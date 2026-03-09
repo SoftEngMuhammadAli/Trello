@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const { StatusCodes, getReasonPhrase } = require('http-status-codes');
-const ApiError = require('../utils/ApiError');
+import mongoose from 'mongoose';
+import { StatusCodes, getReasonPhrase } from 'http-status-codes';
+import ApiError from '../utils/ApiError.js';
 
 function notFound(_req, _res, next) {
   next(new ApiError(StatusCodes.NOT_FOUND, 'Route not found'));
@@ -31,4 +31,4 @@ function errorHandler(err, _req, res, _next) {
   });
 }
 
-module.exports = { notFound, errorHandler };
+export { notFound, errorHandler };

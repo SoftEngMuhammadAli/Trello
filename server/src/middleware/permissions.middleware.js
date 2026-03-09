@@ -1,7 +1,7 @@
-const { StatusCodes } = require('http-status-codes');
-const Workspace = require('../models/Workspace');
-const Board = require('../models/Board');
-const ApiError = require('../utils/ApiError');
+import { StatusCodes } from 'http-status-codes';
+import Workspace from '../models/Workspace.js';
+import Board from '../models/Board.js';
+import ApiError from '../utils/ApiError.js';
 
 async function getWorkspaceRole(workspaceId, userId) {
   const workspace = await Workspace.findById(workspaceId).select('members');
@@ -52,4 +52,4 @@ function boardMember(boardIdResolver) {
   };
 }
 
-module.exports = { workspaceMember, workspaceAdmin, boardMember };
+export { workspaceMember, workspaceAdmin, boardMember };

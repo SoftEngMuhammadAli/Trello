@@ -23,5 +23,3 @@ const uiSlice = createSlice({
 export const { setCreateBoardOpen, setActiveCardId, setBoardMenuOpen } = uiSlice.actions;
 
 export default uiSlice.reducer;
-
-

@@ -1,14 +1,14 @@
-const assert = require('node:assert/strict');
-const mongoose = require('mongoose');
-const request = require('supertest');
-const app = require('../src/app');
-const User = require('../src/models/User');
-const RefreshToken = require('../src/models/RefreshToken');
-const {
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import request from 'supertest';
+import app from '../src/app.js';
+import User from '../src/models/User.js';
+import RefreshToken from '../src/models/RefreshToken.js';
+import {
   issueAuthTokens,
   verifyAccessToken,
   verifyRefreshToken,
-} = require('../src/services/token.service');
+} from '../src/services/token.service.js';
 
 const usersByEmail = new Map();
 const refreshTokens = new Map();

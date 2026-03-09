@@ -1,14 +1,14 @@
-const { StatusCodes } = require('http-status-codes');
-const env = require('../config/env');
-const User = require('../models/User');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
-const {
+import { StatusCodes } from 'http-status-codes';
+import env from '../config/env.js';
+import User from '../models/User.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import {
   issueAuthTokens,
   rotateRefreshToken,
   revokeRefreshToken,
   revokeAllUserRefreshTokens,
-} = require('../services/token.service');
+} from '../services/token.service.js';
 
 function setRefreshCookie(res, refreshToken) {
   res.cookie(env.refreshCookieName, refreshToken, {
@@ -117,11 +117,4 @@ const forgotPassword = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = {
-  register,
-  login,
-  refresh,
-  logout,
-  logoutAll,
-  forgotPassword,
-};
+export { register, login, refresh, logout, logoutAll, forgotPassword };

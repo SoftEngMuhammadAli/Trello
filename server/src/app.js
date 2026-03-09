@@ -1,17 +1,19 @@
-const path = require('path');
-const fs = require('fs');
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const hpp = require('hpp');
-const xssClean = require('xss-clean');
-const mongoSanitize = require('express-mongo-sanitize');
-const cookieParser = require('cookie-parser');
-const rateLimit = require('express-rate-limit');
-const morgan = require('morgan');
-const env = require('./config/env');
-const routes = require('./routes');
-const { notFound, errorHandler } = require('./middleware/error.middleware');
+import path from 'path';
+import fs from 'fs';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import xssClean from 'xss-clean';
+import mongoSanitize from 'express-mongo-sanitize';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import env from './config/env.js';
+import swaggerSpec from './config/swagger.js';
+import routes from './routes/index.js';
+import { notFound, errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
 
@@ -51,9 +53,11 @@ if (env.nodeEnv !== 'test') {
 
 app.use(`/${env.uploadDir}`, express.static(uploadsPath));
 app.get('/health', (_req, res) => res.json({ success: true, status: 'ok' }));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
 app.use('/api', routes);
 
 app.use(notFound);
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

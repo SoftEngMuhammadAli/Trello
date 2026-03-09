@@ -1,14 +1,14 @@
-const { StatusCodes } = require('http-status-codes');
-const Workspace = require('../models/Workspace');
-const Board = require('../models/Board');
-const List = require('../models/List');
-const Card = require('../models/Card');
-const Comment = require('../models/Comment');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
-const { getPagination } = require('../utils/pagination');
-const { pushBoardActivity } = require('../services/activity.service');
-const { emitBoardEvent } = require('../services/socket.service');
+import { StatusCodes } from 'http-status-codes';
+import Workspace from '../models/Workspace.js';
+import Board from '../models/Board.js';
+import List from '../models/List.js';
+import Card from '../models/Card.js';
+import Comment from '../models/Comment.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { getPagination } from '../utils/pagination.js';
+import { pushBoardActivity } from '../services/activity.service.js';
+import { emitBoardEvent } from '../services/socket.service.js';
 
 async function assertWorkspaceMember(workspaceId, userId) {
   const workspace = await Workspace.findById(workspaceId).select('members');
@@ -174,7 +174,7 @@ const deleteBoard = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Board deleted successfully' });
 });
 
-module.exports = {
+export {
   createBoard,
   getBoards,
   getBoard,

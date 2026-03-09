@@ -1,15 +1,15 @@
-const path = require('path');
-const { StatusCodes } = require('http-status-codes');
-const Board = require('../models/Board');
-const List = require('../models/List');
-const Card = require('../models/Card');
-const Comment = require('../models/Comment');
-const Workspace = require('../models/Workspace');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
-const { pushBoardActivity } = require('../services/activity.service');
-const { emitBoardEvent } = require('../services/socket.service');
-const env = require('../config/env');
+import path from 'path';
+import { StatusCodes } from 'http-status-codes';
+import Board from '../models/Board.js';
+import List from '../models/List.js';
+import Card from '../models/Card.js';
+import Comment from '../models/Comment.js';
+import Workspace from '../models/Workspace.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { pushBoardActivity } from '../services/activity.service.js';
+import { emitBoardEvent } from '../services/socket.service.js';
+import env from '../config/env.js';
 
 async function assertBoardAccess(boardId, userId) {
   const board = await Board.findById(boardId);
@@ -203,7 +203,7 @@ const deleteCard = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Card deleted successfully' });
 });
 
-module.exports = {
+export {
   createCard,
   getCard,
   updateCard,

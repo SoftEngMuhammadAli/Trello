@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 const backgroundSchema = Joi.object({
   type: Joi.string().valid('color', 'image').required(),
@@ -18,4 +18,4 @@ const updateBoardSchema = Joi.object({
   members: Joi.array().items(Joi.string().hex().length(24)),
 }).min(1);
 
-module.exports = { createBoardSchema, updateBoardSchema };
+export { createBoardSchema, updateBoardSchema };

@@ -1,8 +1,8 @@
-const { StatusCodes } = require('http-status-codes');
-const User = require('../models/User');
-const { verifyAccessToken } = require('../services/token.service');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
+import { StatusCodes } from 'http-status-codes';
+import User from '../models/User.js';
+import { verifyAccessToken } from '../services/token.service.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 const auth = asyncHandler(async (req, _res, next) => {
   const header = req.headers.authorization || '';
@@ -25,4 +25,4 @@ const auth = asyncHandler(async (req, _res, next) => {
   }
 });
 
-module.exports = auth;
+export default auth;

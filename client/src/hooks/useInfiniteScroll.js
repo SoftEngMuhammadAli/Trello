@@ -19,5 +19,3 @@ export function useInfiniteScroll(onIntersect, enabled = true) {
 
   return sentinelRef;
 }
-
-

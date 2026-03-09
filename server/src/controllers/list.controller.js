@@ -1,12 +1,12 @@
-const { StatusCodes } = require('http-status-codes');
-const Board = require('../models/Board');
-const List = require('../models/List');
-const Card = require('../models/Card');
-const Comment = require('../models/Comment');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
-const { pushBoardActivity } = require('../services/activity.service');
-const { emitBoardEvent } = require('../services/socket.service');
+import { StatusCodes } from 'http-status-codes';
+import Board from '../models/Board.js';
+import List from '../models/List.js';
+import Card from '../models/Card.js';
+import Comment from '../models/Comment.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { pushBoardActivity } from '../services/activity.service.js';
+import { emitBoardEvent } from '../services/socket.service.js';
 
 async function getBoardAndAssertMember(boardId, userId) {
   const board = await Board.findById(boardId).populate('workspaceId', 'members');
@@ -112,7 +112,7 @@ const deleteList = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'List deleted successfully' });
 });
 
-module.exports = {
+export {
   createList,
   updateList,
   updateListPosition,

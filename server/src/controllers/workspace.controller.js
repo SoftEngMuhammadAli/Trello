@@ -1,13 +1,13 @@
-const { StatusCodes } = require('http-status-codes');
-const Workspace = require('../models/Workspace');
-const User = require('../models/User');
-const Board = require('../models/Board');
-const List = require('../models/List');
-const Card = require('../models/Card');
-const Comment = require('../models/Comment');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
-const { getPagination } = require('../utils/pagination');
+import { StatusCodes } from 'http-status-codes';
+import Workspace from '../models/Workspace.js';
+import User from '../models/User.js';
+import Board from '../models/Board.js';
+import List from '../models/List.js';
+import Card from '../models/Card.js';
+import Comment from '../models/Comment.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import { getPagination } from '../utils/pagination.js';
 
 const createWorkspace = asyncHandler(async (req, res) => {
   const workspace = await Workspace.create({
@@ -116,7 +116,7 @@ const deleteWorkspace = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Workspace deleted successfully' });
 });
 
-module.exports = {
+export {
   createWorkspace,
   getWorkspaces,
   getWorkspaceById,

@@ -40,6 +40,3 @@ export function normalizeBoard(board) {
     listOrder,
   };
 }
-
-
-

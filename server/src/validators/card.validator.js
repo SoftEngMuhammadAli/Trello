@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 const labelSchema = Joi.object({
   text: Joi.string().max(40).allow(''),
@@ -31,4 +31,4 @@ const moveCardSchema = Joi.object({
   targetPosition: Joi.number().integer().min(0).required(),
 });
 
-module.exports = { createCardSchema, updateCardSchema, moveCardSchema };
+export { createCardSchema, updateCardSchema, moveCardSchema };

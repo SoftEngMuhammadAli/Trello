@@ -1,11 +1,11 @@
-const { StatusCodes } = require('http-status-codes');
-const Board = require('../models/Board');
-const Workspace = require('../models/Workspace');
-const List = require('../models/List');
-const Card = require('../models/Card');
-const Comment = require('../models/Comment');
-const ApiError = require('../utils/ApiError');
-const asyncHandler = require('../utils/asyncHandler');
+import { StatusCodes } from 'http-status-codes';
+import Board from '../models/Board.js';
+import Workspace from '../models/Workspace.js';
+import List from '../models/List.js';
+import Card from '../models/Card.js';
+import Comment from '../models/Comment.js';
+import ApiError from '../utils/ApiError.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -50,4 +50,4 @@ const search = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { search };
+export { search };
