@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: trello-clone-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  server:
+    build:
+      context: ./server
+    container_name: trello-clone-server
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server/uploads:/app/uploads
+    depends_on:
+      - mongodb
+
+  client:
+    build:
+      context: ./client
+    container_name: trello-clone-client
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+
+volumes:
+  mongo_data:
