@@ -46,6 +46,17 @@ const cardSchema = new mongoose.Schema(
     listId: { type: mongoose.Schema.Types.ObjectId, ref: 'List', required: true },
     position: { type: Number, required: true },
     labels: [cardLabelSchema],
+    status: {
+      type: String,
+      enum: ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'],
+      default: 'todo',
+    },
+    priority: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'urgent'],
+      default: 'medium',
+    },
+    startDate: { type: Date, default: null },
     dueDate: { type: Date, default: null },
     attachments: [attachmentSchema],
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
@@ -59,6 +70,7 @@ const cardSchema = new mongoose.Schema(
 
 cardSchema.index({ listId: 1, position: 1 });
 cardSchema.index({ boardId: 1, archived: 1 });
+cardSchema.index({ boardId: 1, status: 1, priority: 1 });
 cardSchema.index({ title: 'text', description: 'text' });
 
 export default mongoose.model('Card', cardSchema);

@@ -3,33 +3,52 @@
 @tailwind utilities;
 
 :root {
-  --app-bg: #f3f6fb;
-  --app-panel: rgba(255, 255, 255, 0.85);
-  --app-hover: rgba(15, 23, 42, 0.06);
-  --app-text: #0f172a;
-  --app-muted: #64748b;
-  --app-border: rgba(148, 163, 184, 0.35);
+  --app-bg: #eef2f5;
+  --app-bg-strong: #dde4ea;
+  --app-panel: rgba(255, 255, 255, 0.9);
+  --app-panel-soft: rgba(255, 255, 255, 0.72);
+  --app-hover: rgba(14, 25, 39, 0.06);
+  --app-text: #132033;
+  --app-muted: #4d6073;
+  --app-border: rgba(19, 32, 51, 0.16);
+  --app-accent: #0e7490;
+  --app-accent-strong: #155e75;
+  --app-accent-soft: rgba(14, 116, 144, 0.12);
+  --app-danger: #dc2626;
+  --app-success: #047857;
+  --app-shadow: 0 22px 50px -30px rgba(6, 15, 27, 0.55);
 }
 
 .dark {
-  --app-bg: #0b1220;
-  --app-panel: rgba(15, 23, 42, 0.82);
-  --app-hover: rgba(148, 163, 184, 0.16);
-  --app-text: #dbe8ff;
-  --app-muted: #94a3b8;
-  --app-border: rgba(148, 163, 184, 0.25);
+  --app-bg: #070f1a;
+  --app-bg-strong: #111d2a;
+  --app-panel: rgba(14, 25, 38, 0.85);
+  --app-panel-soft: rgba(17, 34, 50, 0.72);
+  --app-hover: rgba(255, 255, 255, 0.07);
+  --app-text: #eff6ff;
+  --app-muted: #9ab0c6;
+  --app-border: rgba(169, 193, 219, 0.2);
+  --app-accent: #22d3ee;
+  --app-accent-strong: #06b6d4;
+  --app-accent-soft: rgba(34, 211, 238, 0.17);
+  --app-danger: #fb7185;
+  --app-success: #34d399;
+  --app-shadow: 0 30px 70px -35px rgba(0, 0, 0, 0.9);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-family: 'Space Grotesk', 'Sora', 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at top right, rgba(20, 150, 255, 0.22), transparent 36%),
-    radial-gradient(circle at 20% 85%, rgba(16, 185, 129, 0.16), transparent 42%),
+    radial-gradient(circle at 0% 0%, rgba(14, 116, 144, 0.26), transparent 38%),
+    radial-gradient(circle at 100% 14%, rgba(20, 184, 166, 0.18), transparent 33%),
+    radial-gradient(circle at 70% 100%, rgba(6, 182, 212, 0.16), transparent 35%),
     var(--app-bg);
+  background-attachment: fixed;
   color: var(--app-text);
-  transition: background-color 220ms ease, color 220ms ease;
+  transition: background-color 240ms ease, color 240ms ease;
+  line-height: 1.45;
 }
 
 * {
@@ -41,12 +60,20 @@ body {
 }
 
 .bg-app {
-  background-color: transparent;
+  background-color: var(--app-bg);
+}
+
+.bg-app-strong {
+  background-color: var(--app-bg-strong);
 }
 
 .bg-panel {
   background-color: var(--app-panel);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px);
+}
+
+.bg-panel-soft {
+  background-color: var(--app-panel-soft);
 }
 
 .border-app {
@@ -65,6 +92,61 @@ body {
   background-color: var(--app-hover);
 }
 
+.bg-accent {
+  background-color: var(--app-accent);
+}
+
+.bg-accent-strong {
+  background-color: var(--app-accent-strong);
+}
+
+.text-accent {
+  color: var(--app-accent);
+}
+
+.bg-accent-soft {
+  background-color: var(--app-accent-soft);
+}
+
+.shadow-soft {
+  box-shadow: var(--app-shadow);
+}
+
+.app-card {
+  border: 1px solid var(--app-border);
+  background: linear-gradient(180deg, var(--app-panel), var(--app-panel-soft));
+  border-radius: 1rem;
+  box-shadow: var(--app-shadow);
+}
+
+.app-dot {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--app-accent), #14b8a6);
+}
+
+.profile-field {
+  width: 100%;
+  border-radius: 0.85rem;
+  border: 1px solid var(--app-border);
+  background: var(--app-panel);
+  color: var(--app-text);
+  padding: 0.72rem 0.9rem;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profile-field:focus {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 3px var(--app-accent-soft);
+}
+
+.profile-field:disabled {
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
 .modal-enter {
   animation: modalEnter 160ms ease;
 }
@@ -72,10 +154,40 @@ body {
 @keyframes modalEnter {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.97);
+    transform: translateY(14px) scale(0.98);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: riseIn 260ms ease;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--app-border);
+  border-radius: 999px;
 }

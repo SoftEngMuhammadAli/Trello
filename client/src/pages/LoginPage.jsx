@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -30,11 +30,11 @@ function LoginPage() {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="Access your boards, workspaces, and live collaboration"
+      subtitle="Access your workspace command center and continue shipping."
       footer={
         <>
           New here?{' '}
-          <Link to="/signup" className="font-semibold text-brand-700 underline">
+          <Link to="/signup" className="font-semibold text-accent underline underline-offset-4">
             Create account
           </Link>
         </>
@@ -56,11 +56,14 @@ function LoginPage() {
           required
         />
         <Button className="w-full" type="submit" loading={authStatus === 'loading'}>
-          Login
+          Continue to dashboard
         </Button>
       </form>
 
-      <Link to="/forgot-password" className="mt-4 inline-block text-sm font-semibold text-brand-700 underline">
+      <Link
+        to="/forgot-password"
+        className="mt-4 inline-block text-sm font-semibold text-accent underline underline-offset-4"
+      >
         Forgot password?
       </Link>
     </AuthLayout>
@@ -68,5 +71,3 @@ function LoginPage() {
 }
 
 export default LoginPage;
-
-

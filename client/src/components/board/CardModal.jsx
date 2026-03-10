@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useDispatch } from 'react-redux';
@@ -50,6 +50,9 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           title: draft.title,
           description: draft.description,
           labels: draft.labels,
+          status: draft.status,
+          priority: draft.priority,
+          startDate: draft.startDate,
           dueDate: draft.dueDate,
           members: draft.members,
           cover: draft.cover,
@@ -91,9 +94,9 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
   return (
     <Modal open={Boolean(card)} onClose={closeModal} title="Card Details" className="max-w-6xl">
       <div className="grid gap-4 lg:grid-cols-[1fr_300px] lg:gap-6">
-        <div className="space-y-5">
+        <div className="space-y-5 rounded-2xl border border-app bg-panel-soft p-4">
           <input
-            className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-lg font-semibold text-app"
+            className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-lg font-black tracking-tight text-app"
             value={draft.title}
             onChange={(event) => {
               onTyping?.();
@@ -113,10 +116,10 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
 
           <section>
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-app">Checklists</h4>
+              <h4 className="text-sm font-black uppercase tracking-wide text-app-muted">Checklists</h4>
               <Button
                 variant="secondary"
-                className="py-1 text-xs"
+                size="sm"
                 onClick={() =>
                   setDraft((prev) => ({
                     ...prev,
@@ -140,9 +143,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                         setDraft((prev) => ({
                           ...prev,
                           checklists: (prev.checklists || []).map((entry) =>
-                            entry.id === checklist.id
-                              ? { ...entry, title: event.target.value }
-                              : entry,
+                            entry.id === checklist.id ? { ...entry, title: event.target.value } : entry,
                           ),
                         }))
                       }
@@ -184,9 +185,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                                     ? {
                                         ...entry,
                                         items: (entry.items || []).map((it) =>
-                                          it.id === item.id
-                                            ? { ...it, text: event.target.value }
-                                            : it,
+                                          it.id === item.id ? { ...it, text: event.target.value } : it,
                                         ),
                                       }
                                     : entry,
@@ -201,7 +200,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                     <div className="mt-2 flex gap-2">
                       <Button
                         variant="secondary"
-                        className="py-1 text-xs"
+                        size="sm"
                         onClick={() =>
                           setDraft((prev) => ({
                             ...prev,
@@ -217,13 +216,11 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                       </Button>
                       <Button
                         variant="danger"
-                        className="py-1 text-xs"
+                        size="sm"
                         onClick={() =>
                           setDraft((prev) => ({
                             ...prev,
-                            checklists: (prev.checklists || []).filter(
-                              (entry) => entry.id !== checklist.id,
-                            ),
+                            checklists: (prev.checklists || []).filter((entry) => entry.id !== checklist.id),
                           }))
                         }
                       >
@@ -237,7 +234,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           </section>
 
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Comments</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Comments</h4>
             <div className="mb-3 flex flex-col gap-2 sm:flex-row">
               <input
                 className="w-full rounded-lg border border-app bg-panel px-3 py-2"
@@ -253,14 +250,12 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
               </Button>
             </div>
 
-            <div className="max-h-56 space-y-2 overflow-auto rounded-xl border border-app bg-panel p-2">
+            <div className="custom-scrollbar max-h-56 space-y-2 overflow-auto rounded-xl border border-app bg-panel p-2">
               {(card.commentsData || []).map((item) => (
-                <div key={item._id} className="rounded-lg border border-app bg-panel p-2 text-sm">
+                <div key={item._id} className="rounded-lg border border-app bg-panel-soft p-2 text-sm">
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <p className="font-semibold text-app">{item.userId?.name || 'Member'}</p>
-                    <p className="text-[11px] text-app-muted">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </p>
+                    <p className="text-[11px] text-app-muted">{new Date(item.createdAt).toLocaleString()}</p>
                   </div>
 
                   {editingComment.id === item._id ? (
@@ -268,19 +263,13 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                       <textarea
                         className="w-full rounded border border-app bg-panel px-2 py-1"
                         value={editingComment.text}
-                        onChange={(event) =>
-                          setEditingComment((prev) => ({ ...prev, text: event.target.value }))
-                        }
+                        onChange={(event) => setEditingComment((prev) => ({ ...prev, text: event.target.value }))}
                       />
                       <div className="flex gap-2">
-                        <Button className="py-1 text-xs" onClick={onUpdateComment}>
+                        <Button size="sm" onClick={onUpdateComment}>
                           Save
                         </Button>
-                        <Button
-                          variant="secondary"
-                          className="py-1 text-xs"
-                          onClick={() => setEditingComment({ id: '', text: '' })}
-                        >
+                        <Button variant="secondary" size="sm" onClick={() => setEditingComment({ id: '', text: '' })}>
                           Cancel
                         </Button>
                       </div>
@@ -290,16 +279,14 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                       <p className="text-app">{item.text}</p>
                       <div className="mt-2 flex gap-2">
                         <button
-                          className="rounded px-1 py-0.5 text-xs text-brand-600 hover:bg-hover"
+                          className="rounded px-1 py-0.5 text-xs text-accent hover:bg-hover"
                           onClick={() => setEditingComment({ id: item._id, text: item.text })}
                         >
                           Edit
                         </button>
                         <button
-                          className="rounded px-1 py-0.5 text-xs text-rose-500 hover:bg-hover"
-                          onClick={() =>
-                            dispatch(deleteComment({ commentId: item._id, cardId: card._id }))
-                          }
+                          className="rounded px-1 py-0.5 text-xs text-rose-400 hover:bg-hover"
+                          onClick={() => dispatch(deleteComment({ commentId: item._id, cardId: card._id }))}
                         >
                           Delete
                         </button>
@@ -314,7 +301,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
 
         <aside className="space-y-4 rounded-2xl border border-app bg-panel p-4">
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Members</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Members</h4>
             <div className="space-y-2">
               {members.map((member) => {
                 const selected = memberSet.has(member._id);
@@ -340,12 +327,12 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           </section>
 
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Labels</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Labels</h4>
             <div className="mb-2 flex flex-wrap gap-1">
               {(draft.labels || []).map((label, index) => (
                 <span
                   key={`${card._id}-modal-label-${index}`}
-                  className="rounded px-2 py-1 text-xs text-white"
+                  className="rounded px-2 py-1 text-xs font-semibold text-white"
                   style={{ backgroundColor: label.color }}
                 >
                   {label.text || 'label'}
@@ -355,33 +342,34 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button
                 variant="secondary"
-                className="py-1 text-xs"
+                size="sm"
                 onClick={() =>
                   setDraft((prev) => ({
                     ...prev,
-                    labels: [...(prev.labels || []), { text: 'Label', color: '#3b82f6' }],
+                    labels: [...(prev.labels || []), { text: 'Label', color: '#0891b2' }],
                   }))
                 }
               >
                 + Label
               </Button>
-              <Button
-                variant="secondary"
-                className="py-1 text-xs"
-                onClick={() => setDraft((prev) => ({ ...prev, labels: [] }))}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setDraft((prev) => ({ ...prev, labels: [] }))}>
                 Clear
               </Button>
             </div>
           </section>
 
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Due Date</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Due Date</h4>
+            <DatePicker
+              selected={draft.startDate ? new Date(draft.startDate) : null}
+              onChange={(date) => setDraft((prev) => ({ ...prev, startDate: date ? date.toISOString() : null }))}
+              className="mb-2 w-full rounded-lg border border-app bg-panel px-3 py-2"
+              placeholderText="Select start date"
+              isClearable
+            />
             <DatePicker
               selected={draft.dueDate ? new Date(draft.dueDate) : null}
-              onChange={(date) =>
-                setDraft((prev) => ({ ...prev, dueDate: date ? date.toISOString() : null }))
-              }
+              onChange={(date) => setDraft((prev) => ({ ...prev, dueDate: date ? date.toISOString() : null }))}
               className="w-full rounded-lg border border-app bg-panel px-3 py-2"
               placeholderText="Select due date"
               isClearable
@@ -389,7 +377,35 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           </section>
 
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Cover Image</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Status & Priority</h4>
+            <div className="space-y-2">
+              <select
+                className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm text-app"
+                value={draft.status || 'todo'}
+                onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value }))}
+              >
+                <option value="backlog">Backlog</option>
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="in_review">In Review</option>
+                <option value="done">Done</option>
+                <option value="blocked">Blocked</option>
+              </select>
+              <select
+                className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm text-app"
+                value={draft.priority || 'medium'}
+                onChange={(event) => setDraft((prev) => ({ ...prev, priority: event.target.value }))}
+              >
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Cover Image</h4>
             <input
               className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm"
               value={draft.cover || ''}
@@ -399,13 +415,13 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           </section>
 
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Attachments</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Attachments</h4>
             <input type="file" onChange={handleFileUpload} className="mb-2 text-sm" />
             <div className="space-y-1 text-xs">
               {(card.attachments || []).map((attachment, idx) => (
                 <a
                   key={`${attachment.url}-${idx}`}
-                  className="block break-all text-brand-700 underline"
+                  className="block break-all text-accent underline"
                   href={`${import.meta.env.VITE_SOCKET_URL || 'http://localhost:3030'}${attachment.url}`}
                   target="_blank"
                   rel="noreferrer"
@@ -417,7 +433,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           </section>
 
           <section>
-            <h4 className="mb-2 text-sm font-semibold text-app">Move / Copy</h4>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Move / Copy</h4>
             <select
               className="mb-2 w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm"
               value={moveTargetListId}
@@ -432,15 +448,15 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
             <div className="flex gap-2">
               <Button
                 variant="secondary"
-                className="w-full py-1 text-xs"
+                size="sm"
+                className="w-full"
                 onClick={() =>
                   dispatch(
                     moveCard({
                       cardId: card._id,
                       payload: {
                         targetListId: moveTargetListId,
-                        targetPosition:
-                          lists.find((list) => list._id === moveTargetListId)?.cardIds?.length || 0,
+                        targetPosition: lists.find((list) => list._id === moveTargetListId)?.cardIds?.length || 0,
                       },
                     }),
                   )
@@ -450,7 +466,8 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
               </Button>
               <Button
                 variant="secondary"
-                className="w-full py-1 text-xs"
+                size="sm"
+                className="w-full"
                 onClick={() =>
                   dispatch(
                     createCard({
@@ -458,6 +475,9 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
                       title: `${card.title} (Copy)`,
                       description: card.description,
                       labels: card.labels,
+                      status: card.status,
+                      priority: card.priority,
+                      startDate: card.startDate,
                       dueDate: card.dueDate,
                       members: card.members,
                       cover: card.cover,
@@ -472,14 +492,14 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
           </section>
 
           <Button className="w-full" onClick={saveChanges}>
-            Save Changes
+            Save changes
           </Button>
           <Button
             variant="secondary"
             className="w-full"
             onClick={() => dispatch(updateCard({ cardId: card._id, payload: { archived: true } }))}
           >
-            Archive Card
+            Archive card
           </Button>
           <Button
             className="w-full"
@@ -489,7 +509,7 @@ function CardModal({ card, members = [], lists = [], onTyping }) {
               closeModal();
             }}
           >
-            Delete Card
+            Delete card
           </Button>
         </aside>
       </div>

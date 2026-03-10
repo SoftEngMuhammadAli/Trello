@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -44,7 +44,7 @@ function BoardPage() {
   const currentBoard = useSelector(selectCurrentBoard);
   const boardLists = useSelector(selectFilteredBoardLists);
   const favoriteBoardIds = useSelector(selectFavoriteBoardIds);
-  const { boardStatus, searchResults } = useSelector((state) => state.boards);
+  const { boardStatus, searchResults, filters } = useSelector((state) => state.boards);
   const { activeCardId } = useSelector((state) => state.ui);
   const { user } = useSelector((state) => state.auth);
 
@@ -145,7 +145,7 @@ function BoardPage() {
         if (['INPUT', 'TEXTAREA'].includes(event.target?.tagName)) return;
         const firstList = boardLists[0]?.list;
         if (!firstList) return;
-        dispatch(createCard({ listId: firstList._id, title: 'Quick card' }));
+        dispatch(createCard({ listId: firstList._id, title: 'Quick card', status: 'todo', priority: 'medium' }));
         toast.success('Quick card created');
       },
     },
@@ -160,7 +160,7 @@ function BoardPage() {
           updateCard({
             cardId: activeCardId,
             payload: {
-              labels: [...(card.labels || []), { text: 'Shortcut', color: '#8b5cf6' }],
+              labels: [...(card.labels || []), { text: 'Shortcut', color: '#0ea5e9' }],
             },
           }),
         );
@@ -192,6 +192,7 @@ function BoardPage() {
   ]);
 
   const activeCard = currentBoard?.cardsById?.[activeCardId] || null;
+  const flattenedCards = boardLists.flatMap(({ list, cards }) => cards.map((card) => ({ ...card, listTitle: list.title })));
 
   const onDragEnd = async (result) => {
     const { destination, source, draggableId, type } = result;
@@ -201,9 +202,7 @@ function BoardPage() {
     try {
       if (type === 'list') {
         dispatch(optimisticReorderList({ listId: draggableId, position: destination.index }));
-        const response = await dispatch(
-          reorderList({ listId: draggableId, position: destination.index, boardId }),
-        );
+        const response = await dispatch(reorderList({ listId: draggableId, position: destination.index, boardId }));
         if (reorderList.rejected.match(response)) throw new Error(response.payload);
       } else {
         dispatch(
@@ -242,21 +241,19 @@ function BoardPage() {
   }
 
   if (!currentBoard) {
-    return <div className="p-8">Board not found or inaccessible.</div>;
+    return <div className="p-8 text-app">Board not found or inaccessible.</div>;
   }
 
   const liveEditors = Object.values(typingUsers);
 
   return (
-    <AppShell
-      workspaceId={currentBoard.workspaceId}
-      onWorkspaceChange={() => navigate('/dashboard')}
-      title="Board"
-    >
+    <AppShell workspaceId={currentBoard.workspaceId} onWorkspaceChange={() => navigate('/dashboard')} title={currentBoard.title}>
       <main
         className="min-h-[calc(100vh-8rem)] rounded-2xl border border-app p-2 sm:p-3 md:p-5"
         style={{
-          background: currentBoard.background?.value || '#0b78de',
+          background: `linear-gradient(180deg, rgba(5, 11, 22, 0.22), rgba(5, 11, 22, 0.72)), ${
+            currentBoard.background?.value || '#0f172a'
+          }`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -271,36 +268,72 @@ function BoardPage() {
         <FilterBar searchInputRef={searchInputRef} onSearchChange={setSearchValue} />
 
         {searchResults && debouncedSearch ? (
-          <section className="mb-4 rounded-xl bg-panel p-3 text-sm text-app shadow-soft">
-            Search matched {searchResults.cards?.length || 0} cards, {searchResults.lists?.length || 0} lists,
-            {' '}
+          <section className="mb-4 rounded-xl border border-app bg-panel p-3 text-sm text-app shadow-soft">
+            Search matched {searchResults.cards?.length || 0} cards, {searchResults.lists?.length || 0} lists,{' '}
             {searchResults.comments?.length || 0} comments.
           </section>
         ) : null}
 
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="all-lists" direction="horizontal" type="list">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="flex min-h-[60vh] gap-3 overflow-x-auto pb-3 sm:pb-4"
-              >
-                {boardLists.map(({ list, cards }, index) => (
-                  <ListColumn
-                    key={list._id}
-                    list={list}
-                    cards={cards}
-                    index={index}
-                    onOpenCard={(cardId) => dispatch(setActiveCardId(cardId))}
-                  />
-                ))}
-                {provided.placeholder}
-                <AddListInline boardId={currentBoard._id} />
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        {filters.view === 'list' ? (
+          <section className="overflow-hidden rounded-2xl border border-app bg-panel">
+            <div className="custom-scrollbar max-h-[65vh] overflow-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="sticky top-0 bg-panel-soft text-left text-xs uppercase tracking-wide text-app-muted">
+                  <tr>
+                    <th className="px-4 py-3">Task</th>
+                    <th className="px-4 py-3">Column</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Priority</th>
+                    <th className="px-4 py-3">Due Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flattenedCards.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-8 text-center text-app-muted" colSpan={5}>
+                        No tasks found with current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    flattenedCards.map((card) => (
+                      <tr
+                        key={card._id}
+                        className="cursor-pointer border-t border-app text-app transition hover:bg-hover"
+                        onClick={() => dispatch(setActiveCardId(card._id))}
+                      >
+                        <td className="px-4 py-3 font-semibold">{card.title}</td>
+                        <td className="px-4 py-3 text-app-muted">{card.listTitle}</td>
+                        <td className="px-4 py-3">{(card.status || 'todo').replace('_', ' ')}</td>
+                        <td className="px-4 py-3">{(card.priority || 'medium').replace('_', ' ')}</td>
+                        <td className="px-4 py-3 text-app-muted">
+                          {card.dueDate ? new Date(card.dueDate).toLocaleDateString() : 'No date'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="all-lists" direction="horizontal" type="list">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="custom-scrollbar flex min-h-[60vh] gap-3 overflow-x-auto pb-3 sm:pb-4"
+                >
+                  {boardLists.map(({ list, cards }, index) => (
+                    <ListColumn key={list._id} list={list} cards={cards} index={index} onOpenCard={(cardId) => dispatch(setActiveCardId(cardId))} />
+                  ))}
+                  {provided.placeholder}
+                  <AddListInline boardId={currentBoard._id} />
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        )}
       </main>
 
       {activeCard ? (

@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import env from '../config/env.js';
 import User from '../models/User.js';
+import { createDefaultProfile } from '../models/User.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import {
@@ -19,6 +20,16 @@ function setRefreshCookie(res, refreshToken) {
   });
 }
 
+const sanitizeUser = (user) => {
+  const rawUser = typeof user.toObject === 'function' ? user.toObject() : user;
+  const safeUser = { ...rawUser };
+  delete safeUser.password;
+  return {
+    ...safeUser,
+    profile: safeUser.profile || createDefaultProfile({ name: safeUser.name, email: safeUser.email }),
+  };
+};
+
 const register = asyncHandler(async (req, res) => {
   const existingUser = await User.findOne({ email: req.body.email });
   if (existingUser) {
@@ -32,13 +43,7 @@ const register = asyncHandler(async (req, res) => {
   res.status(StatusCodes.CREATED).json({
     success: true,
     accessToken,
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-      createdAt: user.createdAt,
-    },
+    user: sanitizeUser(user),
   });
 });
 
@@ -56,13 +61,7 @@ const login = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     accessToken,
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-      createdAt: user.createdAt,
-    },
+    user: sanitizeUser(user),
   });
 });
 
@@ -83,7 +82,7 @@ const refresh = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     accessToken: rotated.accessToken,
-    user,
+    user: sanitizeUser(user),
   });
 });
 

@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import api from '../../api/client';
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../utils/authStorage';
 import { connectSocket, disconnectSocket } from '../../app/socket';
+import { ensureUserProfile } from './profileDefaults';
 
 export const registerUser = createAsyncThunk('auth/register', async (payload, thunkAPI) => {
   try {
@@ -54,10 +55,32 @@ export const logoutUser = createAsyncThunk('auth/logout', async (_, thunkAPI) =>
   }
 });
 
+export const fetchCurrentUserProfile = createAsyncThunk('auth/fetchCurrentUserProfile', async (_, thunkAPI) => {
+  try {
+    const { data } = await api.get('/users/profile');
+    return data.user;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to load profile');
+  }
+});
+
+export const updateCurrentUserProfile = createAsyncThunk(
+  'auth/updateCurrentUserProfile',
+  async (payload, thunkAPI) => {
+    try {
+      const { data } = await api.put('/users/update', payload);
+      return data.user;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to update profile');
+    }
+  },
+);
+
 const initialState = {
   user: null,
   accessToken: getAccessToken(),
   status: 'idle',
+  profileStatus: 'idle',
   error: null,
   initialized: false,
 };
@@ -74,7 +97,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.user = action.payload.user;
+        state.user = ensureUserProfile(action.payload.user);
         state.accessToken = action.payload.accessToken;
         setAccessToken(action.payload.accessToken);
         connectSocket(action.payload.accessToken);
@@ -89,7 +112,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.user = action.payload.user;
+        state.user = ensureUserProfile(action.payload.user);
         state.accessToken = action.payload.accessToken;
         setAccessToken(action.payload.accessToken);
         connectSocket(action.payload.accessToken);
@@ -104,7 +127,7 @@ const authSlice = createSlice({
       .addCase(bootstrapAuth.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.initialized = true;
-        state.user = action.payload.user;
+        state.user = ensureUserProfile(action.payload.user);
         state.accessToken = action.payload.accessToken;
         setAccessToken(action.payload.accessToken);
         connectSocket(action.payload.accessToken);
@@ -123,6 +146,28 @@ const authSlice = createSlice({
         state.initialized = true;
         clearAccessToken();
         disconnectSocket();
+      })
+      .addCase(fetchCurrentUserProfile.pending, (state) => {
+        state.profileStatus = 'loading';
+      })
+      .addCase(fetchCurrentUserProfile.fulfilled, (state, action) => {
+        state.profileStatus = 'succeeded';
+        state.user = ensureUserProfile(action.payload);
+      })
+      .addCase(fetchCurrentUserProfile.rejected, (state, action) => {
+        state.profileStatus = 'failed';
+        state.error = action.payload;
+      })
+      .addCase(updateCurrentUserProfile.pending, (state) => {
+        state.profileStatus = 'loading';
+      })
+      .addCase(updateCurrentUserProfile.fulfilled, (state, action) => {
+        state.profileStatus = 'succeeded';
+        state.user = ensureUserProfile(action.payload);
+      })
+      .addCase(updateCurrentUserProfile.rejected, (state, action) => {
+        state.profileStatus = 'failed';
+        state.error = action.payload;
       });
   },
 });

@@ -17,11 +17,17 @@ const checklistSchema = Joi.object({
   items: Joi.array().items(checklistItemSchema).required(),
 });
 
+const cardStatus = Joi.string().valid('backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked');
+const cardPriority = Joi.string().valid('low', 'medium', 'high', 'urgent');
+
 const createCardSchema = Joi.object({
   title: Joi.string().min(1).max(300).required(),
   description: Joi.string().allow(''),
   listId: Joi.string().hex().length(24).required(),
   labels: Joi.array().items(labelSchema).optional(),
+  status: cardStatus.optional(),
+  priority: cardPriority.optional(),
+  startDate: Joi.date().allow(null),
   dueDate: Joi.date().allow(null),
   members: Joi.array().items(Joi.string().hex().length(24)).optional(),
   cover: Joi.string().allow(''),
@@ -33,6 +39,9 @@ const updateCardSchema = Joi.object({
   title: Joi.string().min(1).max(300),
   description: Joi.string().allow(''),
   labels: Joi.array().items(labelSchema),
+  status: cardStatus,
+  priority: cardPriority,
+  startDate: Joi.date().allow(null),
   dueDate: Joi.date().allow(null),
   members: Joi.array().items(Joi.string().hex().length(24)),
   cover: Joi.string().allow(''),

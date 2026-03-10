@@ -22,6 +22,29 @@ async function seed() {
     email: 'demo@trelloclone.dev',
     password: 'password123',
     avatar: 'https://i.pravatar.cc/150?u=demo',
+    profile: {
+      personal: {
+        firstName: 'Demo',
+        lastName: 'Admin',
+        phoneNumber: '+1 555 0100',
+        personalEmail: 'demo@trelloclone.dev',
+        about: 'Product-minded engineer building collaborative tools.',
+      },
+      professional: {
+        jobTitle: 'Engineering Lead',
+        department: 'Product Engineering',
+        yearsOfExperience: '6',
+        workLocation: 'Hybrid',
+        skills: ['React', 'Node.js', 'MongoDB'],
+      },
+      social: {
+        github: 'https://github.com/demo',
+        linkedin: 'https://linkedin.com/in/demo',
+      },
+      account: {
+        status: 'online',
+      },
+    },
   });
 
   const workspace = await Workspace.create({
@@ -58,6 +81,8 @@ async function seed() {
     listId: todo._id,
     position: 0,
     members: [user._id],
+    status: 'todo',
+    priority: 'high',
     labels: [{ text: 'DevOps', color: '#2563eb' }],
   });
 

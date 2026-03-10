@@ -11,6 +11,16 @@ import { pushBoardActivity } from '../services/activity.service.js';
 import { emitBoardEvent } from '../services/socket.service.js';
 import env from '../config/env.js';
 
+const inferStatusFromListTitle = (listTitle = '') => {
+  const normalized = listTitle.toLowerCase();
+  if (normalized.includes('backlog')) return 'backlog';
+  if (normalized.includes('progress') || normalized.includes('doing')) return 'in_progress';
+  if (normalized.includes('review')) return 'in_review';
+  if (normalized.includes('done') || normalized.includes('completed')) return 'done';
+  if (normalized.includes('block')) return 'blocked';
+  return 'todo';
+};
+
 async function assertBoardAccess(boardId, userId) {
   const board = await Board.findById(boardId);
   if (!board) throw new ApiError(StatusCodes.NOT_FOUND, 'Board not found');
@@ -36,7 +46,20 @@ async function getListWithBoardAccess(listId, userId) {
 }
 
 const createCard = asyncHandler(async (req, res) => {
-  const { listId, title, description, labels, dueDate, members, cover, checklists, position } = req.body;
+  const {
+    listId,
+    title,
+    description,
+    labels,
+    status,
+    priority,
+    startDate,
+    dueDate,
+    members,
+    cover,
+    checklists,
+    position,
+  } = req.body;
   const { list, board } = await getListWithBoardAccess(listId, req.user._id);
 
   let targetPosition = position;
@@ -52,6 +75,9 @@ const createCard = asyncHandler(async (req, res) => {
     listId,
     position: targetPosition,
     labels: labels || [],
+    status: status || inferStatusFromListTitle(list.title),
+    priority: priority || 'medium',
+    startDate: startDate || null,
     dueDate: dueDate || null,
     members: members || [],
     cover: cover || '',
@@ -85,6 +111,9 @@ const updateCard = asyncHandler(async (req, res) => {
     'title',
     'description',
     'labels',
+    'status',
+    'priority',
+    'startDate',
     'dueDate',
     'members',
     'cover',
@@ -120,6 +149,7 @@ const moveCard = asyncHandler(async (req, res) => {
 
   const targetCards = await Card.find({ listId: targetList._id, _id: { $ne: card._id } }).sort({ position: 1 });
   const safePosition = Math.max(0, Math.min(req.body.targetPosition, targetCards.length));
+  const inferredStatus = inferStatusFromListTitle(targetList.title);
 
   if (sourceList._id.toString() !== targetList._id.toString()) {
     await List.updateOne({ _id: sourceList._id }, { $pull: { cards: card._id } });
@@ -129,17 +159,18 @@ const moveCard = asyncHandler(async (req, res) => {
   targetCards.splice(safePosition, 0, card);
 
   await Promise.all(
-    targetCards.map((item, index) =>
-      Card.updateOne(
-        { _id: item._id },
-        {
-          $set: {
-            position: index,
-            listId: targetList._id,
-          },
-        },
-      ),
-    ),
+    targetCards.map((item, index) => {
+      const payload = {
+        position: index,
+        listId: targetList._id,
+      };
+
+      if (item._id.toString() === card._id.toString()) {
+        payload.status = inferredStatus;
+      }
+
+      return Card.updateOne({ _id: item._id }, { $set: payload });
+    }),
   );
 
   await pushBoardActivity(board._id, 'card.moved', req.user._id, {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -27,9 +27,9 @@ function ForgotPasswordPage() {
   return (
     <AuthLayout
       title="Reset password"
-      subtitle="Provide your email and we will trigger the password reset flow"
+      subtitle="Enter your email and we will trigger the secure reset flow."
       footer={
-        <Link to="/login" className="font-semibold text-brand-700 underline">
+        <Link to="/login" className="font-semibold text-accent underline underline-offset-4">
           Back to login
         </Link>
       }
@@ -43,7 +43,7 @@ function ForgotPasswordPage() {
           required
         />
         <Button className="w-full" type="submit">
-          Send Reset Instructions
+          Send reset instructions
         </Button>
       </form>
     </AuthLayout>
@@ -51,5 +51,3 @@ function ForgotPasswordPage() {
 }
 
 export default ForgotPasswordPage;
-
-

@@ -5,15 +5,17 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#eef8ff',
-          100: '#d8eeff',
-          500: '#1496ff',
-          600: '#0a7bde',
-          700: '#075dae',
+          50: '#ecfeff',
+          100: '#cffafe',
+          300: '#67e8f9',
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
         },
       },
       boxShadow: {
-        soft: '0 10px 30px rgba(0, 0, 0, 0.12)',
+        soft: '0 22px 50px -30px rgba(6, 15, 27, 0.55)',
       },
     },
   },

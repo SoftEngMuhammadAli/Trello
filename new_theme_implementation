@@ -1,0 +1,3639 @@
+﻿# Trello Clone - Full Theme Implementation
+
+Generated from full client scan of theme tokens, theme state, dark-mode activation, and theme utility usage.
+
+## Theme Usage File Index
+- client\src\App.jsx
+- client\src\components\board\AddListInline.jsx
+- client\src\components\board\BoardHeader.jsx
+- client\src\components\board\BoardMenu.jsx
+- client\src\components\board\CardModal.jsx
+- client\src\components\board\CardTile.jsx
+- client\src\components\board\FilterBar.jsx
+- client\src\components\board\ListColumn.jsx
+- client\src\components\common\Button.jsx
+- client\src\components\common\Input.jsx
+- client\src\components\common\Loader.jsx
+- client\src\components\common\Modal.jsx
+- client\src\components\common\ProtectedRoute.jsx
+- client\src\components\common\Skeleton.jsx
+- client\src\features\cards\uiSlice.js
+- client\src\layouts\AppShell.jsx
+- client\src\layouts\AuthLayout.jsx
+- client\src\pages\BoardPage.jsx
+- client\src\pages\DashboardPage.jsx
+- client\src\pages\ForgotPasswordPage.jsx
+- client\src\pages\LoginPage.jsx
+- client\src\pages\NotFoundPage.jsx
+- client\src\pages\ProfilePage.jsx
+- client\src\pages\SignupPage.jsx
+- client\src\styles\index.css
+- client\tailwind.config.js
+
+## Full Theme Source (All matched files)
+
+### client\src\App.jsx
+~~~jsx
+import { lazy, Suspense, useEffect } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { bootstrapAuth } from './features/auth/authSlice';
+import Loader from './components/common/Loader';
+import ProtectedRoute from './components/common/ProtectedRoute';
+
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const BoardPage = lazy(() => import('./pages/BoardPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+function App() {
+  const dispatch = useDispatch();
+  const initialized = useSelector((state) => state.auth.initialized);
+  const theme = useSelector((state) => state.ui.theme);
+
+  useEffect(() => {
+    dispatch(bootstrapAuth());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const handler = () => dispatch(bootstrapAuth());
+    window.addEventListener('auth:changed', handler);
+    return () => window.removeEventListener('auth:changed', handler);
+  }, [dispatch]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    window.localStorage.setItem('trello_clone_theme', theme);
+  }, [theme]);
+
+  if (!initialized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader label="Bootstrapping session" />
+      </div>
+    );
+  }
+
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader />
+        </div>
+      }
+    >
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/board/:boardId"
+          element={
+            <ProtectedRoute>
+              <BoardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+export default App;
+~~~
+
+### client\src\components\board\AddListInline.jsx
+~~~jsx
+import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { createList } from '../../features/boards/boardSlice';
+import Button from '../common/Button';
+
+function AddListInline({ boardId }) {
+  const dispatch = useDispatch();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+
+  const onSubmit = () => {
+    if (!title.trim()) return;
+    dispatch(createList({ boardId, title: title.trim() }));
+    setTitle('');
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        className="flex h-64 w-[85vw] max-w-[24rem] shrink-0 items-center justify-center rounded-2xl border border-dashed border-app bg-panel/40 text-xl font-bold tracking-tight text-app-muted transition hover:border-brand-500 hover:text-white sm:w-[24rem]"
+        onClick={() => setOpen(true)}
+      >
+        + Add Column
+      </button>
+    );
+  }
+
+  return (
+    <div className="w-[85vw] max-w-[24rem] shrink-0 rounded-2xl border border-app bg-panel p-3 shadow-soft sm:w-[24rem]">
+      <input
+        className="mb-2 w-full rounded-lg border border-app bg-panel-soft px-3 py-2 text-sm text-app outline-none focus:border-brand-500"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        placeholder="Column title"
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') onSubmit();
+        }}
+        autoFocus
+      />
+      <div className="flex gap-2">
+        <Button className="w-full" size="sm" onClick={onSubmit}>
+          Add column
+        </Button>
+        <Button
+          className="w-full"
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            setOpen(false);
+            setTitle('');
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default AddListInline;
+~~~
+
+### client\src\components\board\BoardHeader.jsx
+~~~jsx
+import { useMemo, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { updateBoard } from '../../features/boards/boardSlice';
+import { setBoardMenuOpen } from '../../features/cards/uiSlice';
+import Button from '../common/Button';
+
+const boardTabs = ['Tasks', 'Backlog', 'Sprints', 'Members', 'Files', 'Notes', 'Overview'];
+
+function BoardHeader({ board, isFavorite, onToggleFavorite, liveEditors = [] }) {
+  const dispatch = useDispatch();
+  const [title, setTitle] = useState(board.title);
+  const [activeTab, setActiveTab] = useState('Tasks');
+
+  const editorLabel = useMemo(() => {
+    if (liveEditors.length === 0) return '';
+    if (liveEditors.length === 1) return `${liveEditors[0]} is editing right now`;
+    return `${liveEditors[0]} and ${liveEditors.length - 1} others are editing right now`;
+  }, [liveEditors]);
+
+  const saveTitle = () => {
+    if (title.trim() && title !== board.title) {
+      dispatch(updateBoard({ boardId: board._id, payload: { title: title.trim() } }));
+    }
+  };
+
+  return (
+    <header className="mb-4 space-y-3">
+      <div className="rounded-2xl border border-app bg-panel p-4 shadow-soft">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <input
+              className="w-full rounded-lg bg-transparent px-1 py-1 text-2xl font-black tracking-tight text-white outline-none ring-brand-500 focus:ring-2 md:text-3xl"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              onBlur={saveTitle}
+            />
+            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-200/85">Realtime project board workspace</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded-lg border border-white/45 bg-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white hover:bg-white/20"
+              onClick={onToggleFavorite}
+            >
+              {isFavorite ? 'Favorited' : 'Favorite'}
+            </button>
+            <Button variant="ghost" className="shrink-0 border-white/45 bg-white/15 text-white hover:bg-white/20 hover:text-white" onClick={() => dispatch(setBoardMenuOpen(true))}>
+              Board menu
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex w-full items-center justify-between gap-2 overflow-x-auto rounded-xl border border-white/20 bg-black/15 p-1.5">
+          <div className="flex min-w-max items-center gap-1.5">
+            {boardTabs.map((tab) => (
+              <button
+                key={tab}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                  activeTab === tab ? 'bg-white text-slate-900' : 'text-slate-100 hover:bg-white/15'
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden shrink-0 items-center gap-2 md:flex">
+            <div className="flex -space-x-2">
+              {(board.members || []).slice(0, 4).map((member) => (
+                <div
+                  key={member._id}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-black/20 text-xs font-semibold text-white"
+                  title={member.name}
+                >
+                  {member.name?.slice(0, 1).toUpperCase() || '?'}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {editorLabel ? (
+        <p className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-900/20 px-3 py-1 text-xs font-semibold text-emerald-200">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
+          {editorLabel}
+        </p>
+      ) : null}
+    </header>
+  );
+}
+
+export default BoardHeader;
+~~~
+
+### client\src\components\board\BoardMenu.jsx
+~~~jsx
+import { useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateBoard, updateCard } from '../../features/boards/boardSlice';
+import { setBoardMenuOpen } from '../../features/cards/uiSlice';
+import Button from '../common/Button';
+
+const boardBackgrounds = [
+  'linear-gradient(130deg, #0f766e, #06b6d4)',
+  'linear-gradient(130deg, #0369a1, #0891b2)',
+  'linear-gradient(130deg, #166534, #14b8a6)',
+  'linear-gradient(130deg, #0f172a, #1e293b)',
+  '#0f172a',
+];
+
+function BoardMenu() {
+  const dispatch = useDispatch();
+  const { boardMenuOpen } = useSelector((state) => state.ui);
+  const { currentBoard } = useSelector((state) => state.boards);
+  const [imageUrl, setImageUrl] = useState('');
+
+  const archivedCards = useMemo(
+    () => Object.values(currentBoard?.cardsById || {}).filter((card) => card.archived),
+    [currentBoard],
+  );
+
+  if (!currentBoard) return null;
+
+  return (
+    <>
+      <aside
+        className={`fixed inset-y-0 right-0 z-50 w-full border-l border-app bg-panel p-3 shadow-soft transition-transform duration-300 sm:w-[380px] sm:p-4 ${
+          boardMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="mb-4 flex items-center justify-between border-b border-app pb-3">
+          <h2 className="text-lg font-black tracking-tight text-app">Board Menu</h2>
+          <button
+            className="rounded-lg border border-app bg-panel-soft px-3 py-1.5 text-sm text-app-muted hover:bg-hover"
+            onClick={() => dispatch(setBoardMenuOpen(false))}
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="custom-scrollbar space-y-5 overflow-auto pb-6 text-sm text-app" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
+          <section className="rounded-xl border border-app bg-panel-soft p-3">
+            <h4 className="mb-1 text-base font-black tracking-tight">About Board</h4>
+            <p className="text-app-muted">Workspace: {currentBoard?.workspaceId || 'N/A'}</p>
+            <p className="text-app-muted">Visibility: Workspace members</p>
+          </section>
+
+          <section className="rounded-xl border border-app bg-panel-soft p-3">
+            <h4 className="mb-2 text-base font-black tracking-tight">Change Background</h4>
+            <div className="mb-2 grid grid-cols-5 gap-2">
+              {boardBackgrounds.map((value) => (
+                <button
+                  key={value}
+                  className="h-9 rounded border border-white/40"
+                  style={{ background: value }}
+                  onClick={() =>
+                    dispatch(
+                      updateBoard({
+                        boardId: currentBoard._id,
+                        payload: { background: { type: 'gradient', value } },
+                      }),
+                    )
+                  }
+                />
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="w-full rounded-lg border border-app bg-panel px-3 py-2"
+                placeholder="Image URL"
+                value={imageUrl}
+                onChange={(event) => setImageUrl(event.target.value)}
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (!imageUrl.trim()) return;
+                  dispatch(
+                    updateBoard({
+                      boardId: currentBoard._id,
+                      payload: { background: { type: 'image', value: `url(${imageUrl.trim()})` } },
+                    }),
+                  );
+                  setImageUrl('');
+                }}
+              >
+                Apply
+              </Button>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-app bg-panel-soft p-3">
+            <h4 className="mb-2 text-base font-black tracking-tight">Activity</h4>
+            <div className="max-h-64 space-y-2 overflow-auto rounded-lg border border-app bg-panel p-2">
+              {(currentBoard?.activityLog || []).map((entry, index) => (
+                <div key={`${entry.createdAt}-${index}`} className="rounded-lg border border-app bg-panel-soft p-2">
+                  <p className="font-semibold text-app">{entry.action}</p>
+                  <p className="text-xs text-app-muted">{new Date(entry.createdAt).toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-app bg-panel-soft p-3">
+            <h4 className="mb-2 text-base font-black tracking-tight">Archived Items</h4>
+            {archivedCards.length === 0 ? <p className="text-xs text-app-muted">No archived cards.</p> : null}
+            <div className="space-y-2">
+              {archivedCards.map((card) => (
+                <div key={card._id} className="flex items-center justify-between rounded-lg border border-app bg-panel p-2">
+                  <span className="truncate pr-2 text-sm font-medium">{card.title}</span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => dispatch(updateCard({ cardId: card._id, payload: { archived: false } }))}
+                  >
+                    Restore
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-app bg-panel-soft p-3">
+            <h4 className="mb-2 text-base font-black tracking-tight">Members</h4>
+            <div className="space-y-2">
+              {(currentBoard?.members || []).map((member) => (
+                <div key={member._id} className="rounded-lg border border-app bg-panel p-2">
+                  <p className="font-semibold">{member.name}</p>
+                  <p className="text-xs text-app-muted">{member.email}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      {boardMenuOpen ? (
+        <button
+          className="fixed inset-0 z-40 bg-slate-950/35"
+          onClick={() => dispatch(setBoardMenuOpen(false))}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export default BoardMenu;
+~~~
+
+### client\src\components\board\CardModal.jsx
+~~~jsx
+import { useEffect, useMemo, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { useDispatch } from 'react-redux';
+import {
+  createCard,
+  createComment,
+  deleteCard,
+  deleteComment,
+  moveCard,
+  updateCard,
+  updateComment,
+  uploadAttachment,
+} from '../../features/boards/boardSlice';
+import { setActiveCardId } from '../../features/cards/uiSlice';
+import Button from '../common/Button';
+import Modal from '../common/Modal';
+
+const makeChecklist = () => ({
+  id: crypto.randomUUID(),
+  title: 'Checklist',
+  items: [],
+});
+
+const makeChecklistItem = () => ({
+  id: crypto.randomUUID(),
+  text: 'Task',
+  done: false,
+});
+
+function CardModal({ card, members = [], lists = [], onTyping }) {
+  const dispatch = useDispatch();
+  const [draft, setDraft] = useState(card);
+  const [comment, setComment] = useState('');
+  const [editingComment, setEditingComment] = useState({ id: '', text: '' });
+  const [moveTargetListId, setMoveTargetListId] = useState(card.listId);
+
+  useEffect(() => {
+    setDraft(card);
+    setMoveTargetListId(card.listId);
+  }, [card]);
+
+  const memberSet = useMemo(() => new Set(draft.members || []), [draft.members]);
+
+  const saveChanges = () => {
+    dispatch(
+      updateCard({
+        cardId: card._id,
+        payload: {
+          title: draft.title,
+          description: draft.description,
+          labels: draft.labels,
+          status: draft.status,
+          priority: draft.priority,
+          startDate: draft.startDate,
+          dueDate: draft.dueDate,
+          members: draft.members,
+          cover: draft.cover,
+          checklists: draft.checklists,
+        },
+      }),
+    );
+  };
+
+  const onAddComment = () => {
+    if (!comment.trim()) return;
+    dispatch(createComment({ cardId: card._id, text: comment.trim() }));
+    setComment('');
+  };
+
+  const onUpdateComment = () => {
+    if (!editingComment.id || !editingComment.text.trim()) return;
+    dispatch(updateComment({ commentId: editingComment.id, text: editingComment.text.trim() }));
+    setEditingComment({ id: '', text: '' });
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    dispatch(uploadAttachment({ cardId: card._id, file }));
+  };
+
+  const closeModal = () => dispatch(setActiveCardId(null));
+
+  const checklistStats = (draft.checklists || []).map((checklist) => {
+    const done = (checklist.items || []).filter((item) => item.done).length;
+    return {
+      id: checklist.id,
+      done,
+      total: checklist.items?.length || 0,
+    };
+  });
+
+  return (
+    <Modal open={Boolean(card)} onClose={closeModal} title="Card Details" className="max-w-6xl">
+      <div className="grid gap-4 lg:grid-cols-[1fr_300px] lg:gap-6">
+        <div className="space-y-5 rounded-2xl border border-app bg-panel-soft p-4">
+          <input
+            className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-lg font-black tracking-tight text-app"
+            value={draft.title}
+            onChange={(event) => {
+              onTyping?.();
+              setDraft((prev) => ({ ...prev, title: event.target.value }));
+            }}
+          />
+
+          <textarea
+            className="min-h-28 w-full rounded-lg border border-app bg-panel px-3 py-2 text-app"
+            value={draft.description || ''}
+            onChange={(event) => {
+              onTyping?.();
+              setDraft((prev) => ({ ...prev, description: event.target.value }));
+            }}
+            placeholder="Add a more detailed description"
+          />
+
+          <section>
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-sm font-black uppercase tracking-wide text-app-muted">Checklists</h4>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    checklists: [...(prev.checklists || []), makeChecklist()],
+                  }))
+                }
+              >
+                + Checklist
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {(draft.checklists || []).map((checklist) => {
+                const stat = checklistStats.find((entry) => entry.id === checklist.id);
+                return (
+                  <div key={checklist.id} className="rounded-xl border border-app bg-panel p-3">
+                    <input
+                      className="mb-2 w-full rounded border border-app bg-transparent px-2 py-1 text-sm font-semibold text-app"
+                      value={checklist.title}
+                      onChange={(event) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          checklists: (prev.checklists || []).map((entry) =>
+                            entry.id === checklist.id ? { ...entry, title: event.target.value } : entry,
+                          ),
+                        }))
+                      }
+                    />
+                    <p className="mb-2 text-xs text-app-muted">
+                      {stat?.done || 0}/{stat?.total || 0} complete
+                    </p>
+
+                    <div className="space-y-2">
+                      {(checklist.items || []).map((item) => (
+                        <label key={item.id} className="flex items-center gap-2 text-sm text-app">
+                          <input
+                            type="checkbox"
+                            checked={item.done}
+                            onChange={() =>
+                              setDraft((prev) => ({
+                                ...prev,
+                                checklists: (prev.checklists || []).map((entry) =>
+                                  entry.id === checklist.id
+                                    ? {
+                                        ...entry,
+                                        items: (entry.items || []).map((it) =>
+                                          it.id === item.id ? { ...it, done: !it.done } : it,
+                                        ),
+                                      }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                          />
+                          <input
+                            className="w-full rounded border border-app bg-transparent px-2 py-1"
+                            value={item.text}
+                            onChange={(event) =>
+                              setDraft((prev) => ({
+                                ...prev,
+                                checklists: (prev.checklists || []).map((entry) =>
+                                  entry.id === checklist.id
+                                    ? {
+                                        ...entry,
+                                        items: (entry.items || []).map((it) =>
+                                          it.id === item.id ? { ...it, text: event.target.value } : it,
+                                        ),
+                                      }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            checklists: (prev.checklists || []).map((entry) =>
+                              entry.id === checklist.id
+                                ? { ...entry, items: [...(entry.items || []), makeChecklistItem()] }
+                                : entry,
+                            ),
+                          }))
+                        }
+                      >
+                        + Item
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            checklists: (prev.checklists || []).filter((entry) => entry.id !== checklist.id),
+                          }))
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Comments</h4>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                className="w-full rounded-lg border border-app bg-panel px-3 py-2"
+                value={comment}
+                onChange={(event) => {
+                  onTyping?.();
+                  setComment(event.target.value);
+                }}
+                placeholder="Write a comment"
+              />
+              <Button className="w-full sm:w-auto" onClick={onAddComment}>
+                Post
+              </Button>
+            </div>
+
+            <div className="custom-scrollbar max-h-56 space-y-2 overflow-auto rounded-xl border border-app bg-panel p-2">
+              {(card.commentsData || []).map((item) => (
+                <div key={item._id} className="rounded-lg border border-app bg-panel-soft p-2 text-sm">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="font-semibold text-app">{item.userId?.name || 'Member'}</p>
+                    <p className="text-[11px] text-app-muted">{new Date(item.createdAt).toLocaleString()}</p>
+                  </div>
+
+                  {editingComment.id === item._id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        className="w-full rounded border border-app bg-panel px-2 py-1"
+                        value={editingComment.text}
+                        onChange={(event) => setEditingComment((prev) => ({ ...prev, text: event.target.value }))}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={onUpdateComment}>
+                          Save
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => setEditingComment({ id: '', text: '' })}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-app">{item.text}</p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          className="rounded px-1 py-0.5 text-xs text-accent hover:bg-hover"
+                          onClick={() => setEditingComment({ id: item._id, text: item.text })}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="rounded px-1 py-0.5 text-xs text-rose-400 hover:bg-hover"
+                          onClick={() => dispatch(deleteComment({ commentId: item._id, cardId: card._id }))}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-4 rounded-2xl border border-app bg-panel p-4">
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Members</h4>
+            <div className="space-y-2">
+              {members.map((member) => {
+                const selected = memberSet.has(member._id);
+                return (
+                  <label key={member._id} className="flex items-center gap-2 text-sm text-app">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => {
+                        setDraft((prev) => ({
+                          ...prev,
+                          members: selected
+                            ? (prev.members || []).filter((id) => id !== member._id)
+                            : [...(prev.members || []), member._id],
+                        }));
+                      }}
+                    />
+                    <span>{member.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Labels</h4>
+            <div className="mb-2 flex flex-wrap gap-1">
+              {(draft.labels || []).map((label, index) => (
+                <span
+                  key={`${card._id}-modal-label-${index}`}
+                  className="rounded px-2 py-1 text-xs font-semibold text-white"
+                  style={{ backgroundColor: label.color }}
+                >
+                  {label.text || 'label'}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    labels: [...(prev.labels || []), { text: 'Label', color: '#0891b2' }],
+                  }))
+                }
+              >
+                + Label
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setDraft((prev) => ({ ...prev, labels: [] }))}>
+                Clear
+              </Button>
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Due Date</h4>
+            <DatePicker
+              selected={draft.startDate ? new Date(draft.startDate) : null}
+              onChange={(date) => setDraft((prev) => ({ ...prev, startDate: date ? date.toISOString() : null }))}
+              className="mb-2 w-full rounded-lg border border-app bg-panel px-3 py-2"
+              placeholderText="Select start date"
+              isClearable
+            />
+            <DatePicker
+              selected={draft.dueDate ? new Date(draft.dueDate) : null}
+              onChange={(date) => setDraft((prev) => ({ ...prev, dueDate: date ? date.toISOString() : null }))}
+              className="w-full rounded-lg border border-app bg-panel px-3 py-2"
+              placeholderText="Select due date"
+              isClearable
+            />
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Status & Priority</h4>
+            <div className="space-y-2">
+              <select
+                className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm text-app"
+                value={draft.status || 'todo'}
+                onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value }))}
+              >
+                <option value="backlog">Backlog</option>
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="in_review">In Review</option>
+                <option value="done">Done</option>
+                <option value="blocked">Blocked</option>
+              </select>
+              <select
+                className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm text-app"
+                value={draft.priority || 'medium'}
+                onChange={(event) => setDraft((prev) => ({ ...prev, priority: event.target.value }))}
+              >
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Cover Image</h4>
+            <input
+              className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm"
+              value={draft.cover || ''}
+              onChange={(event) => setDraft((prev) => ({ ...prev, cover: event.target.value }))}
+              placeholder="Image URL"
+            />
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Attachments</h4>
+            <input type="file" onChange={handleFileUpload} className="mb-2 text-sm" />
+            <div className="space-y-1 text-xs">
+              {(card.attachments || []).map((attachment, idx) => (
+                <a
+                  key={`${attachment.url}-${idx}`}
+                  className="block break-all text-accent underline"
+                  href={`${import.meta.env.VITE_SOCKET_URL || 'http://localhost:3030'}${attachment.url}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {attachment.name}
+                </a>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-2 text-sm font-black uppercase tracking-wide text-app-muted">Move / Copy</h4>
+            <select
+              className="mb-2 w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm"
+              value={moveTargetListId}
+              onChange={(event) => setMoveTargetListId(event.target.value)}
+            >
+              {lists.map((list) => (
+                <option key={list._id} value={list._id}>
+                  {list.title}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={() =>
+                  dispatch(
+                    moveCard({
+                      cardId: card._id,
+                      payload: {
+                        targetListId: moveTargetListId,
+                        targetPosition: lists.find((list) => list._id === moveTargetListId)?.cardIds?.length || 0,
+                      },
+                    }),
+                  )
+                }
+              >
+                Move
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={() =>
+                  dispatch(
+                    createCard({
+                      listId: card.listId,
+                      title: `${card.title} (Copy)`,
+                      description: card.description,
+                      labels: card.labels,
+                      status: card.status,
+                      priority: card.priority,
+                      startDate: card.startDate,
+                      dueDate: card.dueDate,
+                      members: card.members,
+                      cover: card.cover,
+                      checklists: card.checklists,
+                    }),
+                  )
+                }
+              >
+                Copy
+              </Button>
+            </div>
+          </section>
+
+          <Button className="w-full" onClick={saveChanges}>
+            Save changes
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => dispatch(updateCard({ cardId: card._id, payload: { archived: true } }))}
+          >
+            Archive card
+          </Button>
+          <Button
+            className="w-full"
+            variant="danger"
+            onClick={() => {
+              dispatch(deleteCard(card._id));
+              closeModal();
+            }}
+          >
+            Delete card
+          </Button>
+        </aside>
+      </div>
+    </Modal>
+  );
+}
+
+export default CardModal;
+~~~
+
+### client\src\components\board\CardTile.jsx
+~~~jsx
+import { memo, useMemo } from 'react';
+import { Draggable } from 'react-beautiful-dnd';
+import { formatDistanceToNow } from 'date-fns';
+
+function getChecklistProgress(checklists = []) {
+  let total = 0;
+  let completed = 0;
+
+  checklists.forEach((list) => {
+    (list.items || []).forEach((item) => {
+      total += 1;
+      if (item.done) completed += 1;
+    });
+  });
+
+  return { total, completed };
+}
+
+const statusTone = {
+  backlog: 'bg-slate-600/20 text-slate-200',
+  todo: 'bg-cyan-600/20 text-cyan-200',
+  in_progress: 'bg-amber-500/20 text-amber-200',
+  in_review: 'bg-indigo-500/20 text-indigo-200',
+  done: 'bg-emerald-600/20 text-emerald-200',
+  blocked: 'bg-rose-600/20 text-rose-200',
+};
+
+const priorityTone = {
+  urgent: 'bg-rose-600/20 text-rose-200',
+  high: 'bg-amber-600/20 text-amber-200',
+  medium: 'bg-cyan-600/20 text-cyan-200',
+  low: 'bg-emerald-600/20 text-emerald-200',
+};
+
+function CardTile({ card, index, onOpen }) {
+  const dueText = card.dueDate ? formatDistanceToNow(new Date(card.dueDate), { addSuffix: true }) : null;
+  const progress = useMemo(() => getChecklistProgress(card.checklists), [card.checklists]);
+  const isOverdue = card.dueDate ? new Date(card.dueDate).getTime() < Date.now() : false;
+  const priorityLabel = card.priority ? card.priority.replace('_', ' ') : 'medium';
+  const statusLabel = card.status ? card.status.replace('_', ' ') : 'todo';
+
+  return (
+    <Draggable draggableId={card._id} index={index}>
+      {(provided, snapshot) => (
+        <article
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={`cursor-pointer rounded-xl border border-app bg-panel-soft p-3 shadow transition duration-150 hover:-translate-y-0.5 hover:shadow-soft ${
+            snapshot.isDragging ? 'rotate-1 shadow-soft' : ''
+          }`}
+          onClick={() => onOpen(card._id)}
+        >
+          {card.cover ? (
+            <div
+              className="mb-2 h-20 rounded-lg bg-cover bg-center"
+              style={{ backgroundImage: `url(${card.cover})` }}
+            />
+          ) : null}
+
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="rounded-lg border border-app px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-app-muted">
+              Task
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${priorityTone[card.priority] || priorityTone.medium}`}>
+                {priorityLabel}
+              </span>
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${statusTone[card.status] || statusTone.todo}`}>
+                {statusLabel}
+              </span>
+            </div>
+          </div>
+
+          <h4 className="line-clamp-3 text-sm font-semibold text-app">{card.title}</h4>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-app-muted">
+            <span className={`inline-flex items-center gap-1 ${isOverdue ? 'text-rose-400' : ''}`}>
+              Due {dueText || 'none'}
+            </span>
+            <span className="inline-flex items-center gap-1">Comments {(card.commentsData || []).length}</span>
+            <span className="inline-flex items-center gap-1">Files {(card.attachments || []).length}</span>
+            {progress.total > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                Checklist {progress.completed}/{progress.total}
+              </span>
+            ) : null}
+          </div>
+
+          {(card.members || []).length > 0 ? (
+            <div className="mt-3 flex -space-x-1">
+              {(card.members || []).slice(0, 3).map((memberId, memberIndex) => (
+                <span
+                  key={`${card._id}-member-${memberId}-${memberIndex}`}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-app bg-panel text-[10px] font-bold uppercase text-app"
+                >
+                  {String(memberId).slice(-1)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </article>
+      )}
+    </Draggable>
+  );
+}
+
+export default memo(CardTile);
+~~~
+
+### client\src\components\board\FilterBar.jsx
+~~~jsx
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilters } from '../../features/boards/boardSlice';
+import Input from '../common/Input';
+
+function FilterBar({ searchInputRef, onSearchChange }) {
+  const dispatch = useDispatch();
+  const { currentBoard, filters } = useSelector((state) => state.boards);
+
+  return (
+    <div className="sticky top-[5.1rem] z-20 mb-4 space-y-3 rounded-2xl border border-app bg-panel p-3 shadow-soft md:p-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_repeat(3,minmax(0,1fr))_minmax(0,1.05fr)]">
+        <Input
+          ref={searchInputRef}
+          placeholder="Search tasks..."
+          value={filters.query}
+          onChange={(event) => {
+            const value = event.target.value;
+            dispatch(setFilters({ query: value }));
+            onSearchChange(value);
+          }}
+        />
+
+        <select
+          className="rounded-xl border border-app bg-panel px-3 py-2 text-sm text-app"
+          value={filters.status}
+          onChange={(event) => dispatch(setFilters({ status: event.target.value }))}
+        >
+          <option value="">All Status</option>
+          <option value="backlog">Backlog</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="in_review">In Review</option>
+          <option value="done">Done</option>
+          <option value="blocked">Blocked</option>
+        </select>
+
+        <select
+          className="rounded-xl border border-app bg-panel px-3 py-2 text-sm text-app"
+          value={filters.priority}
+          onChange={(event) => dispatch(setFilters({ priority: event.target.value }))}
+        >
+          <option value="">All Priority</option>
+          <option value="urgent">Urgent</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+
+        <select
+          className="rounded-xl border border-app bg-panel px-3 py-2 text-sm text-app"
+          value={filters.memberId}
+          onChange={(event) => dispatch(setFilters({ memberId: event.target.value }))}
+        >
+          <option value="">All Assignees</option>
+          {(currentBoard?.members || []).map((member) => (
+            <option key={member._id} value={member._id}>
+              {member.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="rounded-xl border border-app bg-panel px-3 py-2 text-sm text-app"
+          value={filters.dateRange}
+          onChange={(event) => dispatch(setFilters({ dateRange: event.target.value }))}
+        >
+          <option value="">Date Range</option>
+          <option value="overdue">Overdue</option>
+          <option value="today">Today</option>
+          <option value="week">Next 7 days</option>
+          <option value="month">Next 30 days</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="none">No due date</option>
+        </select>
+      </div>
+
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-xl border border-app bg-panel-soft p-1">
+          <button
+            className={`rounded-lg px-4 py-1.5 text-sm font-semibold ${
+              filters.view !== 'list' ? 'bg-accent text-white' : 'text-app-muted hover:text-app'
+            }`}
+            onClick={() => dispatch(setFilters({ view: 'board' }))}
+          >
+            Board
+          </button>
+          <button
+            className={`rounded-lg px-4 py-1.5 text-sm font-semibold ${
+              filters.view === 'list' ? 'bg-accent text-white' : 'text-app-muted hover:text-app'
+            }`}
+            onClick={() => dispatch(setFilters({ view: 'list' }))}
+          >
+            List
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default FilterBar;
+~~~
+
+### client\src\components\board\ListColumn.jsx
+~~~jsx
+import { memo, useMemo, useState } from 'react';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
+import { useDispatch } from 'react-redux';
+import { createCard, deleteList, updateList } from '../../features/boards/boardSlice';
+import CardTile from './CardTile';
+import Button from '../common/Button';
+
+const inferStatusFromListTitle = (title = '') => {
+  const value = title.toLowerCase();
+  if (value.includes('backlog')) return 'backlog';
+  if (value.includes('progress') || value.includes('doing')) return 'in_progress';
+  if (value.includes('review')) return 'in_review';
+  if (value.includes('done') || value.includes('completed')) return 'done';
+  if (value.includes('block')) return 'blocked';
+  return 'todo';
+};
+
+function ListColumn({ list, cards, index, onOpenCard }) {
+  const dispatch = useDispatch();
+  const [listTitle, setListTitle] = useState(list.title);
+  const [newCardTitle, setNewCardTitle] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [addingCard, setAddingCard] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(40);
+
+  const visibleCards = useMemo(() => cards.slice(0, visibleCount), [cards, visibleCount]);
+
+  const saveListTitle = () => {
+    if (listTitle.trim() && listTitle !== list.title) {
+      dispatch(updateList({ listId: list._id, payload: { title: listTitle.trim() } }));
+    }
+  };
+
+  const addCard = () => {
+    if (!newCardTitle.trim()) return;
+    dispatch(
+      createCard({
+        listId: list._id,
+        title: newCardTitle.trim(),
+        status: inferStatusFromListTitle(list.title),
+        priority: 'medium',
+      }),
+    );
+    setNewCardTitle('');
+    setAddingCard(false);
+  };
+
+  const toggleCollapse = () => {
+    dispatch(updateList({ listId: list._id, payload: { collapsed: !list.collapsed } }));
+    setMenuOpen(false);
+  };
+
+  return (
+    <Draggable draggableId={list._id} index={index}>
+      {(dragProvided) => (
+        <section
+          ref={dragProvided.innerRef}
+          {...dragProvided.draggableProps}
+          className="flex h-fit w-[85vw] max-w-[24rem] shrink-0 flex-col rounded-2xl border border-app bg-panel p-3 shadow-soft sm:w-[24rem]"
+        >
+          <div className="mb-3 flex items-center gap-2" {...dragProvided.dragHandleProps}>
+            <span className="text-xs text-app-muted">::</span>
+            <input
+              className="w-full rounded-lg bg-transparent px-2 py-1 text-xl font-black tracking-tight text-app outline-none ring-brand-500 focus:ring-2"
+              value={listTitle}
+              onChange={(event) => setListTitle(event.target.value)}
+              onBlur={saveListTitle}
+            />
+            <span className="rounded-full border border-app bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-app">
+              {cards.length}
+            </span>
+            <div className="relative">
+              <button className="rounded-lg border border-app bg-panel-soft px-2 py-1 text-xs text-app-muted hover:bg-hover" onClick={() => setMenuOpen((s) => !s)}>
+                Menu
+              </button>
+              {menuOpen ? (
+                <div className="absolute right-0 z-10 mt-1 w-40 rounded-xl border border-app bg-panel p-2 text-sm shadow-soft">
+                  <button className="mb-1 w-full rounded px-2 py-1 text-left hover:bg-hover" onClick={toggleCollapse}>
+                    {list.collapsed ? 'Expand list' : 'Collapse list'}
+                  </button>
+                  <button
+                    className="w-full rounded px-2 py-1 text-left text-rose-400 hover:bg-hover"
+                    onClick={() => dispatch(deleteList({ listId: list._id }))}
+                  >
+                    Delete list
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {list.collapsed ? (
+            <button className="rounded-lg border border-app bg-panel-soft py-2 text-sm text-app-muted" onClick={toggleCollapse}>
+              Show cards ({cards.length})
+            </button>
+          ) : (
+            <>
+              <Droppable droppableId={list._id} type="card">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="custom-scrollbar max-h-[50vh] space-y-2 overflow-y-auto pr-1 sm:max-h-[55vh]"
+                  >
+                    {visibleCards.map((card, cardIndex) => (
+                      <CardTile key={card._id} card={card} index={cardIndex} onOpen={onOpenCard} />
+                    ))}
+                    {provided.placeholder}
+                    {visibleCount < cards.length ? (
+                      <button
+                        className="mb-2 w-full rounded-lg border border-app bg-panel-soft py-1 text-xs text-app-muted hover:bg-hover"
+                        onClick={() => setVisibleCount((count) => count + 30)}
+                      >
+                        Load more cards
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </Droppable>
+
+              {addingCard ? (
+                <div className="mt-3 space-y-2 rounded-xl border border-app bg-panel-soft p-2">
+                  <input
+                    className="w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    placeholder="Add task title"
+                    value={newCardTitle}
+                    onChange={(event) => setNewCardTitle(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') addCard();
+                    }}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button className="w-full" size="sm" onClick={addCard}>
+                      Add task
+                    </Button>
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setAddingCard(false);
+                        setNewCardTitle('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  className="mt-3 w-full rounded-xl border border-dashed border-app bg-panel-soft px-3 py-3 text-sm font-semibold text-app-muted transition hover:border-brand-500 hover:text-app"
+                  onClick={() => setAddingCard(true)}
+                >
+                  + Add Task
+                </button>
+              )}
+            </>
+          )}
+        </section>
+      )}
+    </Draggable>
+  );
+}
+
+export default memo(ListColumn);
+~~~
+
+### client\src\components\common\Button.jsx
+~~~jsx
+import classNames from 'classnames';
+
+function Button({
+  className,
+  variant = 'primary',
+  size = 'md',
+  loading = false,
+  children,
+  ...props
+}) {
+  return (
+    <button
+      className={classNames(
+        'inline-flex items-center justify-center gap-2 rounded-xl border border-transparent font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-60 active:translate-y-[1px]',
+        {
+          'px-4 py-2.5 text-sm': size === 'md',
+          'px-3 py-2 text-xs': size === 'sm',
+          'px-5 py-3 text-sm': size === 'lg',
+          'bg-accent text-white shadow-soft hover:bg-accent-strong': variant === 'primary',
+          'border border-app bg-panel text-app hover:bg-hover': variant === 'secondary',
+          'border border-app bg-transparent text-app-muted hover:bg-hover hover:text-app':
+            variant === 'ghost',
+          'bg-rose-600 text-white hover:bg-rose-700': variant === 'danger',
+          'bg-emerald-600 text-white hover:bg-emerald-700': variant === 'success',
+        },
+        className,
+      )}
+      {...props}
+    >
+      {loading ? (
+        <>
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/70 border-r-transparent" />
+          Please wait...
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  );
+}
+
+export default Button;
+~~~
+
+### client\src\components\common\Input.jsx
+~~~jsx
+import { forwardRef } from 'react';
+import classNames from 'classnames';
+
+const Input = forwardRef(function Input(
+  { label, error, hint, className = '', containerClassName = '', ...props },
+  ref,
+) {
+  return (
+    <label className={classNames('flex flex-col gap-1.5 text-sm text-app', containerClassName)}>
+      {label ? <span className="font-semibold tracking-wide text-app-muted">{label}</span> : null}
+      <input
+        ref={ref}
+        className={classNames(
+          'rounded-xl border border-app bg-panel px-3 py-2.5 text-app outline-none ring-brand-500 transition focus:border-brand-500 focus:ring-2',
+          className,
+        )}
+        {...props}
+      />
+      {error ? <span className="text-xs font-medium text-rose-400">{error}</span> : null}
+      {hint && !error ? <span className="text-xs text-app-muted">{hint}</span> : null}
+    </label>
+  );
+});
+
+export default Input;
+~~~
+
+### client\src\components\common\Loader.jsx
+~~~jsx
+function Loader({ label = 'Loading...' }) {
+  return (
+    <div className="inline-flex items-center gap-3 rounded-xl border border-app bg-panel px-4 py-2 text-app-muted">
+      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-600 border-r-transparent" />
+      <span className="text-sm font-medium">{label}</span>
+    </div>
+  );
+}
+
+export default Loader;
+~~~
+
+### client\src\components\common\Modal.jsx
+~~~jsx
+function Modal({ open, onClose, title, children, className = 'max-w-2xl' }) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-950/60 p-2 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className={`modal-enter max-h-[calc(100vh-1rem)] w-full overflow-y-auto custom-scrollbar ${className} rounded-2xl border border-app bg-panel p-4 shadow-soft sm:max-h-[calc(100vh-2rem)] sm:p-6`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3 border-b border-app pb-3">
+          <h2 className="text-lg font-black tracking-tight text-app">{title}</h2>
+          <button className="rounded-lg border border-app bg-panel-soft px-3 py-1.5 text-sm text-app-muted hover:bg-hover hover:text-app" onClick={onClose}>
+            Close
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export default Modal;
+~~~
+
+### client\src\components\common\ProtectedRoute.jsx
+~~~jsx
+import { Navigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
+function ProtectedRoute({ children }) {
+  const location = useLocation();
+  const { user, initialized } = useSelector((state) => state.auth);
+
+  if (!initialized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-app px-4 text-app">
+        <div className="rounded-2xl border border-app bg-panel px-5 py-3 text-sm font-medium text-app-muted">Loading session...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
+
+export default ProtectedRoute;
+~~~
+
+### client\src\components\common\Skeleton.jsx
+~~~jsx
+function Skeleton({ className = '' }) {
+  return <div className={`animate-pulse rounded-xl border border-app bg-panel-soft ${className}`} />;
+}
+
+export default Skeleton;
+~~~
+
+### client\src\features\cards\uiSlice.js
+~~~js
+import { createSlice } from '@reduxjs/toolkit';
+
+const getInitialTheme = () => {
+  if (typeof window === 'undefined') return 'dark';
+  return window.localStorage.getItem('trello_clone_theme') || 'dark';
+};
+
+const uiSlice = createSlice({
+  name: 'ui',
+  initialState: {
+    createBoardOpen: false,
+    activeCardId: null,
+    boardMenuOpen: false,
+    sidebarOpen: false,
+    theme: getInitialTheme(),
+  },
+  reducers: {
+    setCreateBoardOpen(state, action) {
+      state.createBoardOpen = action.payload;
+    },
+    setActiveCardId(state, action) {
+      state.activeCardId = action.payload;
+    },
+    setBoardMenuOpen(state, action) {
+      state.boardMenuOpen = action.payload;
+    },
+    setSidebarOpen(state, action) {
+      state.sidebarOpen = action.payload;
+    },
+    setTheme(state, action) {
+      state.theme = action.payload;
+    },
+    toggleTheme(state) {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+    },
+  },
+});
+
+export const {
+  setCreateBoardOpen,
+  setActiveCardId,
+  setBoardMenuOpen,
+  setSidebarOpen,
+  setTheme,
+  toggleTheme,
+} = uiSlice.actions;
+
+export default uiSlice.reducer;
+~~~
+
+### client\src\layouts\AppShell.jsx
+~~~jsx
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser } from '../features/auth/authSlice';
+import { selectFavoriteBoards, selectRecentBoards } from '../features/boards/selectors';
+import { toggleFavoriteBoard } from '../features/boards/boardSlice';
+import { fetchWorkspaces, setActiveWorkspace } from '../features/workspaces/workspaceSlice';
+import { setSidebarOpen, toggleTheme } from '../features/cards/uiSlice';
+
+const navItems = [
+  { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
+  { id: 'workspaces', label: 'Workspaces', path: '/dashboard' },
+  { id: 'projects', label: 'Projects', path: '/dashboard' },
+  { id: 'tasks', label: 'My Tasks', path: '/dashboard' },
+  { id: 'meetings', label: 'Meetings', path: '/dashboard' },
+  { id: 'notifications', label: 'Notifications', path: '/dashboard' },
+  { id: 'checkins', label: 'Check-ins', path: '/settings/profile' },
+  { id: 'chats', label: 'Chats', path: '/settings/profile' },
+  { id: 'notes', label: 'Notes', path: '/settings/profile' },
+  { id: 'docs', label: 'Docs', path: '/settings/profile' },
+];
+
+function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace' }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [globalSearch, setGlobalSearch] = useState('');
+
+  const { user } = useSelector((state) => state.auth);
+  const { items: workspaces } = useSelector((state) => state.workspaces);
+  const { boards } = useSelector((state) => state.boards);
+  const { sidebarOpen, theme } = useSelector((state) => state.ui);
+  const favoriteBoards = useSelector(selectFavoriteBoards);
+  const recentBoards = useSelector(selectRecentBoards);
+
+  useEffect(() => {
+    if (workspaces.length === 0) {
+      dispatch(fetchWorkspaces({ page: 1, limit: 20 }));
+    }
+  }, [dispatch, workspaces.length]);
+
+  const activeWorkspaceId = workspaceId || '';
+
+  const selectWorkspace = (nextWorkspaceId) => {
+    dispatch(setActiveWorkspace(nextWorkspaceId));
+    dispatch(setSidebarOpen(false));
+    onWorkspaceChange?.(nextWorkspaceId);
+  };
+
+  const searchMatch = useMemo(() => {
+    if (!globalSearch.trim()) return null;
+    const query = globalSearch.toLowerCase();
+    return boards.find((board) => board.title.toLowerCase().includes(query)) || null;
+  }, [boards, globalSearch]);
+
+  const onGlobalSearch = (event) => {
+    if (event.key !== 'Enter') return;
+    if (searchMatch?._id) {
+      navigate(`/board/${searchMatch._id}`);
+      dispatch(setSidebarOpen(false));
+    }
+  };
+
+  const onLogout = async () => {
+    await dispatch(logoutUser());
+    navigate('/login');
+  };
+
+  const isNavActive = (itemId) => {
+    if (itemId === 'dashboard') return location.pathname === '/dashboard';
+    if (itemId === 'projects') return location.pathname.startsWith('/board/');
+    if (['checkins', 'chats', 'notes', 'docs'].includes(itemId)) {
+      return location.pathname.startsWith('/settings/profile');
+    }
+    return false;
+  };
+
+  const goToNavItem = (item) => {
+    if (item.id === 'projects' && recentBoards[0]?._id) {
+      navigate(`/board/${recentBoards[0]._id}`);
+    } else {
+      navigate(item.path);
+    }
+    dispatch(setSidebarOpen(false));
+  };
+
+  const userNameInitial = user?.name?.slice(0, 1).toUpperCase() || 'U';
+
+  return (
+    <div className="min-h-screen bg-app text-app transition-colors duration-300">
+      <div className="flex min-h-screen">
+        <aside
+          className={`fixed inset-y-0 left-0 z-50 w-[min(88vw,22rem)] border-r border-app bg-panel transition-transform duration-300 md:static md:w-[21.5rem] md:translate-x-0 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex h-20 items-center justify-between border-b border-app px-4">
+            <button className="flex items-center gap-3 text-left" onClick={() => navigate('/dashboard')}>
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-lg font-black text-white shadow-soft">
+                FL
+              </span>
+              <span>
+                <span className="block text-2xl font-black tracking-tight">Flowllo</span>
+                <span className="block text-[11px] uppercase tracking-[0.2em] text-app-muted">Team Command</span>
+              </span>
+            </button>
+            <button
+              className="rounded-xl border border-app bg-panel-soft px-3 py-1.5 text-xs font-semibold text-app-muted hover:bg-hover md:hidden"
+              onClick={() => dispatch(setSidebarOpen(false))}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="flex h-[calc(100vh-5rem)] flex-col">
+            <div className="custom-scrollbar flex-1 space-y-5 overflow-auto px-3 py-4">
+              <section className="rounded-2xl border border-app bg-panel-soft p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">Focused Today</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-app bg-panel px-3 py-2">
+                    <p className="text-xs text-app-muted">Boards</p>
+                    <p className="text-lg font-black">{boards.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-app bg-panel px-3 py-2">
+                    <p className="text-xs text-app-muted">Favorites</p>
+                    <p className="text-lg font-black">{favoriteBoards.length}</p>
+                  </div>
+                </div>
+              </section>
+
+              <nav className="space-y-1">
+                {navItems.map((item) => (
+                  <button
+                    key={item.id}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                      isNavActive(item.id)
+                        ? 'border border-app bg-accent-soft text-app'
+                        : 'text-app-muted hover:bg-hover hover:text-app'
+                    }`}
+                    onClick={() => goToNavItem(item)}
+                  >
+                    <span className="app-dot" />
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+
+              <section>
+                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Spaces</h2>
+                <div className="space-y-1">
+                  {workspaces.map((workspace) => (
+                    <button
+                      key={workspace._id}
+                      className={`w-full rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
+                        activeWorkspaceId === workspace._id
+                          ? 'border-app bg-accent-soft text-app'
+                          : 'border-transparent text-app-muted hover:border-app hover:bg-hover hover:text-app'
+                      }`}
+                      onClick={() => selectWorkspace(workspace._id)}
+                    >
+                      {workspace.name}
+                    </button>
+                  ))}
+                  {workspaces.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-app-muted">No workspaces found yet.</p>
+                  ) : null}
+                </div>
+              </section>
+
+              <section>
+                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Favorite Boards</h2>
+                <div className="space-y-1">
+                  {favoriteBoards.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-app-muted">No favorites yet.</p>
+                  ) : (
+                    favoriteBoards.map((board) => (
+                      <div key={`fav-${board._id}`} className="flex items-center gap-2 rounded-xl border border-app bg-panel-soft p-2">
+                        <Link
+                          to={`/board/${board._id}`}
+                          className="min-w-0 flex-1 text-sm font-semibold"
+                          onClick={() => dispatch(setSidebarOpen(false))}
+                        >
+                          <span className="block truncate">{board.title}</span>
+                        </Link>
+                        <button
+                          className="rounded-md border border-app bg-panel px-2 py-1 text-[11px] text-app-muted hover:bg-hover"
+                          onClick={() => dispatch(toggleFavoriteBoard(board._id))}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+
+              <section>
+                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Recent Boards</h2>
+                <div className="space-y-1">
+                  {recentBoards.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-app-muted">No recent boards.</p>
+                  ) : (
+                    recentBoards.map((board) => (
+                      <Link
+                        key={`recent-${board._id}`}
+                        to={`/board/${board._id}`}
+                        onClick={() => dispatch(setSidebarOpen(false))}
+                        className={`block rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                          location.pathname.includes(board._id)
+                            ? 'border-app bg-accent-soft text-app'
+                            : 'border-transparent text-app-muted hover:border-app hover:bg-hover hover:text-app'
+                        }`}
+                      >
+                        {board.title}
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </section>
+            </div>
+
+            <div className="space-y-1 border-t border-app px-3 py-3">
+              <button
+                className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-app-muted hover:bg-hover hover:text-app"
+                onClick={() => {
+                  navigate('/settings/profile');
+                  dispatch(setSidebarOpen(false));
+                }}
+              >
+                Settings
+              </button>
+              <button
+                className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-rose-400 hover:bg-rose-900/20"
+                onClick={onLogout}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-40 flex h-20 items-center gap-2 border-b border-app bg-app px-3 backdrop-blur md:gap-3 md:px-6">
+            <button
+              className="rounded-xl border border-app bg-panel-soft p-2 text-sm md:hidden"
+              onClick={() => dispatch(setSidebarOpen(!sidebarOpen))}
+            >
+              Menu
+            </button>
+
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <input
+                className="w-full rounded-xl border border-app bg-panel px-4 py-2.5 text-sm text-app outline-none ring-brand-500 focus:border-brand-500 focus:ring-2"
+                placeholder="Search boards, projects, tasks"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                onKeyDown={onGlobalSearch}
+              />
+              {searchMatch ? (
+                <button
+                  className="hidden rounded-lg border border-app bg-panel-soft px-3 py-2 text-xs font-semibold text-accent md:block"
+                  onClick={() => navigate(`/board/${searchMatch._id}`)}
+                >
+                  Open
+                </button>
+              ) : null}
+            </div>
+
+            <button
+              className="hidden rounded-xl bg-accent px-5 py-2 text-sm font-bold text-white hover:bg-accent-strong md:block"
+              onClick={() => navigate('/settings/profile')}
+            >
+              Profile
+            </button>
+            <button
+              className="rounded-xl border border-app bg-panel-soft px-3 py-2 text-sm text-app-muted hover:text-app"
+              onClick={() => dispatch(toggleTheme())}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+            <button
+              className="hidden rounded-xl border border-app bg-panel-soft px-3 py-2 text-xs font-semibold text-app-muted md:block"
+              onClick={() => navigate('/settings/profile')}
+              title={title}
+            >
+              {title}
+            </button>
+            <button
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-app bg-panel text-base font-bold text-accent"
+              onClick={() => navigate('/settings/profile')}
+            >
+              {userNameInitial}
+            </button>
+          </header>
+
+          <div className="min-w-0 flex-1 p-3 md:p-6">{children}</div>
+        </div>
+      </div>
+
+      {sidebarOpen ? (
+        <button
+          className="fixed inset-0 z-40 bg-slate-950/45 md:hidden"
+          onClick={() => dispatch(setSidebarOpen(false))}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export default AppShell;
+~~~
+
+### client\src\layouts\AuthLayout.jsx
+~~~jsx
+import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { loginUser } from '../features/auth/authSlice';
+
+function AuthLayout({ title, subtitle, children, footer }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const openDemoDashboard = async () => {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    const result = await dispatch(
+      loginUser({ email: 'demo@trelloclone.dev', password: 'password123' }),
+    );
+    setDemoLoading(false);
+
+    if (loginUser.fulfilled.match(result)) {
+      toast.success('Demo session started');
+      navigate('/dashboard');
+      return;
+    }
+
+    toast.error(result.payload || 'Demo user unavailable. Run server seed first.');
+  };
+
+  return (
+    <div className="min-h-screen bg-app px-4 py-6 text-app sm:px-6 sm:py-10">
+      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl overflow-hidden rounded-3xl border border-app bg-panel shadow-soft lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="relative hidden overflow-hidden border-r border-app p-8 lg:block">
+          <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-brand-500/30 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-emerald-400/25 blur-3xl" />
+
+          <div className="relative z-10 flex h-full flex-col justify-between">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-app bg-panel-soft px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted">
+                <span className="app-dot" />
+                Flowllo Platform
+              </p>
+              <h2 className="mt-7 text-5xl font-black leading-tight tracking-tight text-app">
+                Work orchestration,
+                <br />
+                but beautiful.
+              </h2>
+              <p className="mt-5 max-w-xl text-base text-app-muted">
+                Plan projects, move tasks at speed, and collaborate in real time with a board workspace designed for focus.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-app bg-panel-soft p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">Included</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                {['Live board updates', 'Filters and search', 'Rich card details', 'Member workflows'].map((item) => (
+                  <div key={item} className="rounded-lg border border-app bg-panel px-3 py-2 font-medium text-app">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="flex items-center justify-center p-4 sm:p-6 lg:p-8">
+          <div className="w-full max-w-md rounded-2xl border border-app bg-panel-soft p-6 shadow-soft sm:p-8">
+            <h1 className="text-3xl font-black tracking-tight text-app">{title}</h1>
+            <p className="mt-2 text-sm text-app-muted">{subtitle}</p>
+
+            <div className="mt-6">{children}</div>
+
+            {footer ? <div className="mt-5 text-sm text-app-muted">{footer}</div> : null}
+            <div className="mt-4 text-center text-xs text-app-muted">
+              <button
+                className="font-semibold text-accent underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={openDemoDashboard}
+                disabled={demoLoading}
+              >
+                {demoLoading ? 'Opening demo...' : 'Open demo dashboard'}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export default AuthLayout;
+~~~
+
+### client\src\pages\BoardPage.jsx
+~~~jsx
+import { useEffect, useRef, useState } from 'react';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { getSocket } from '../app/socket';
+import {
+  clearSearchResults,
+  createCard,
+  fetchBoardFull,
+  moveCard,
+  optimisticMoveCard,
+  optimisticReorderList,
+  pushRecentBoard,
+  reorderList,
+  searchBoard,
+  toggleFavoriteBoard,
+  updateCard,
+} from '../features/boards/boardSlice';
+import {
+  selectCurrentBoard,
+  selectFavoriteBoardIds,
+  selectFilteredBoardLists,
+} from '../features/boards/selectors';
+import { setActiveCardId } from '../features/cards/uiSlice';
+import { fetchWorkspaces, setActiveWorkspace } from '../features/workspaces/workspaceSlice';
+import AddListInline from '../components/board/AddListInline';
+import BoardHeader from '../components/board/BoardHeader';
+import BoardMenu from '../components/board/BoardMenu';
+import CardModal from '../components/board/CardModal';
+import FilterBar from '../components/board/FilterBar';
+import ListColumn from '../components/board/ListColumn';
+import Skeleton from '../components/common/Skeleton';
+import { useDebounce } from '../hooks/useDebounce';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import AppShell from '../layouts/AppShell';
+
+function BoardPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { boardId } = useParams();
+  const searchInputRef = useRef(null);
+
+  const currentBoard = useSelector(selectCurrentBoard);
+  const boardLists = useSelector(selectFilteredBoardLists);
+  const favoriteBoardIds = useSelector(selectFavoriteBoardIds);
+  const { boardStatus, searchResults, filters } = useSelector((state) => state.boards);
+  const { activeCardId } = useSelector((state) => state.ui);
+  const { user } = useSelector((state) => state.auth);
+
+  const [searchValue, setSearchValue] = useState('');
+  const [typingUsers, setTypingUsers] = useState({});
+  const debouncedSearch = useDebounce(searchValue, 350);
+
+  useEffect(() => {
+    if (boardId) {
+      dispatch(fetchBoardFull(boardId));
+      dispatch(pushRecentBoard(boardId));
+      dispatch(fetchWorkspaces({ page: 1, limit: 20 }));
+    }
+  }, [dispatch, boardId]);
+
+  useEffect(() => {
+    if (currentBoard?.workspaceId) {
+      dispatch(setActiveWorkspace(currentBoard.workspaceId));
+    }
+  }, [dispatch, currentBoard?.workspaceId]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !boardId) return;
+
+    socket.emit('board:join', boardId);
+
+    const refreshBoard = () => dispatch(fetchBoardFull(boardId));
+
+    socket.on('board:updated', refreshBoard);
+    socket.on('list:created', refreshBoard);
+    socket.on('list:updated', refreshBoard);
+    socket.on('list:reordered', refreshBoard);
+    socket.on('list:deleted', refreshBoard);
+    socket.on('card:created', refreshBoard);
+    socket.on('card:updated', refreshBoard);
+    socket.on('card:moved', refreshBoard);
+    socket.on('card:deleted', refreshBoard);
+    socket.on('comment:created', refreshBoard);
+    socket.on('comment:updated', refreshBoard);
+    socket.on('comment:deleted', refreshBoard);
+    socket.on('board:typing', (payload) => {
+      if (!payload?.userId || payload.userId === user?._id) return;
+      setTypingUsers((prev) => ({ ...prev, [payload.userId]: payload.userName || 'A member' }));
+      setTimeout(() => {
+        setTypingUsers((prev) => {
+          const next = { ...prev };
+          delete next[payload.userId];
+          return next;
+        });
+      }, 2000);
+    });
+
+    return () => {
+      socket.emit('board:leave', boardId);
+      socket.off('board:updated', refreshBoard);
+      socket.off('list:created', refreshBoard);
+      socket.off('list:updated', refreshBoard);
+      socket.off('list:reordered', refreshBoard);
+      socket.off('list:deleted', refreshBoard);
+      socket.off('card:created', refreshBoard);
+      socket.off('card:updated', refreshBoard);
+      socket.off('card:moved', refreshBoard);
+      socket.off('card:deleted', refreshBoard);
+      socket.off('comment:created', refreshBoard);
+      socket.off('comment:updated', refreshBoard);
+      socket.off('comment:deleted', refreshBoard);
+      socket.off('board:typing');
+    };
+  }, [dispatch, boardId, user?._id]);
+
+  useEffect(() => {
+    if (!boardId) return;
+    if (!debouncedSearch.trim()) {
+      dispatch(clearSearchResults());
+      return;
+    }
+
+    dispatch(searchBoard({ q: debouncedSearch, boardId }));
+  }, [dispatch, debouncedSearch, boardId]);
+
+  useKeyboardShortcuts([
+    {
+      key: '/',
+      action: (event) => {
+        if (['INPUT', 'TEXTAREA'].includes(event.target?.tagName)) return;
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      },
+    },
+    {
+      key: 'Escape',
+      action: () => dispatch(setActiveCardId(null)),
+    },
+    {
+      key: 'c',
+      action: (event) => {
+        if (['INPUT', 'TEXTAREA'].includes(event.target?.tagName)) return;
+        const firstList = boardLists[0]?.list;
+        if (!firstList) return;
+        dispatch(createCard({ listId: firstList._id, title: 'Quick card', status: 'todo', priority: 'medium' }));
+        toast.success('Quick card created');
+      },
+    },
+    {
+      key: 'l',
+      action: (event) => {
+        if (['INPUT', 'TEXTAREA'].includes(event.target?.tagName)) return;
+        if (!activeCardId) return;
+        const card = currentBoard?.cardsById?.[activeCardId];
+        if (!card) return;
+        dispatch(
+          updateCard({
+            cardId: activeCardId,
+            payload: {
+              labels: [...(card.labels || []), { text: 'Shortcut', color: '#0ea5e9' }],
+            },
+          }),
+        );
+        toast.success('Label added via shortcut');
+      },
+    },
+    {
+      key: 'm',
+      action: (event) => {
+        if (['INPUT', 'TEXTAREA'].includes(event.target?.tagName)) return;
+        if (!activeCardId) return;
+        const card = currentBoard?.cardsById?.[activeCardId];
+        const firstMember = currentBoard?.members?.[0];
+        if (!card || !firstMember) return;
+        const exists = (card.members || []).includes(firstMember._id);
+        dispatch(
+          updateCard({
+            cardId: activeCardId,
+            payload: {
+              members: exists
+                ? (card.members || []).filter((id) => id !== firstMember._id)
+                : [...(card.members || []), firstMember._id],
+            },
+          }),
+        );
+        toast.success('Member assignment updated');
+      },
+    },
+  ]);
+
+  const activeCard = currentBoard?.cardsById?.[activeCardId] || null;
+  const flattenedCards = boardLists.flatMap(({ list, cards }) => cards.map((card) => ({ ...card, listTitle: list.title })));
+
+  const onDragEnd = async (result) => {
+    const { destination, source, draggableId, type } = result;
+    if (!destination) return;
+    if (destination.index === source.index && destination.droppableId === source.droppableId) return;
+
+    try {
+      if (type === 'list') {
+        dispatch(optimisticReorderList({ listId: draggableId, position: destination.index }));
+        const response = await dispatch(reorderList({ listId: draggableId, position: destination.index, boardId }));
+        if (reorderList.rejected.match(response)) throw new Error(response.payload);
+      } else {
+        dispatch(
+          optimisticMoveCard({
+            cardId: draggableId,
+            targetListId: destination.droppableId,
+            targetPosition: destination.index,
+          }),
+        );
+
+        const response = await dispatch(
+          moveCard({
+            cardId: draggableId,
+            payload: { targetListId: destination.droppableId, targetPosition: destination.index },
+          }),
+        );
+        if (moveCard.rejected.match(response)) throw new Error(response.payload);
+      }
+    } catch (_error) {
+      toast.error('Failed to persist drag operation');
+      dispatch(fetchBoardFull(boardId));
+    }
+  };
+
+  if (boardStatus === 'loading' && !currentBoard) {
+    return (
+      <div className="p-4 md:p-8">
+        <Skeleton className="mb-4 h-14" />
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Skeleton key={`list-skeleton-${idx}`} className="h-72 w-72" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentBoard) {
+    return <div className="p-8 text-app">Board not found or inaccessible.</div>;
+  }
+
+  const liveEditors = Object.values(typingUsers);
+
+  return (
+    <AppShell workspaceId={currentBoard.workspaceId} onWorkspaceChange={() => navigate('/dashboard')} title={currentBoard.title}>
+      <main
+        className="min-h-[calc(100vh-8rem)] rounded-2xl border border-app p-2 sm:p-3 md:p-5"
+        style={{
+          background: `linear-gradient(180deg, rgba(5, 11, 22, 0.22), rgba(5, 11, 22, 0.72)), ${
+            currentBoard.background?.value || '#0f172a'
+          }`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <BoardHeader
+          board={currentBoard}
+          isFavorite={favoriteBoardIds.includes(currentBoard._id)}
+          onToggleFavorite={() => dispatch(toggleFavoriteBoard(currentBoard._id))}
+          liveEditors={liveEditors}
+        />
+
+        <FilterBar searchInputRef={searchInputRef} onSearchChange={setSearchValue} />
+
+        {searchResults && debouncedSearch ? (
+          <section className="mb-4 rounded-xl border border-app bg-panel p-3 text-sm text-app shadow-soft">
+            Search matched {searchResults.cards?.length || 0} cards, {searchResults.lists?.length || 0} lists,{' '}
+            {searchResults.comments?.length || 0} comments.
+          </section>
+        ) : null}
+
+        {filters.view === 'list' ? (
+          <section className="overflow-hidden rounded-2xl border border-app bg-panel">
+            <div className="custom-scrollbar max-h-[65vh] overflow-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="sticky top-0 bg-panel-soft text-left text-xs uppercase tracking-wide text-app-muted">
+                  <tr>
+                    <th className="px-4 py-3">Task</th>
+                    <th className="px-4 py-3">Column</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Priority</th>
+                    <th className="px-4 py-3">Due Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flattenedCards.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-8 text-center text-app-muted" colSpan={5}>
+                        No tasks found with current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    flattenedCards.map((card) => (
+                      <tr
+                        key={card._id}
+                        className="cursor-pointer border-t border-app text-app transition hover:bg-hover"
+                        onClick={() => dispatch(setActiveCardId(card._id))}
+                      >
+                        <td className="px-4 py-3 font-semibold">{card.title}</td>
+                        <td className="px-4 py-3 text-app-muted">{card.listTitle}</td>
+                        <td className="px-4 py-3">{(card.status || 'todo').replace('_', ' ')}</td>
+                        <td className="px-4 py-3">{(card.priority || 'medium').replace('_', ' ')}</td>
+                        <td className="px-4 py-3 text-app-muted">
+                          {card.dueDate ? new Date(card.dueDate).toLocaleDateString() : 'No date'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="all-lists" direction="horizontal" type="list">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="custom-scrollbar flex min-h-[60vh] gap-3 overflow-x-auto pb-3 sm:pb-4"
+                >
+                  {boardLists.map(({ list, cards }, index) => (
+                    <ListColumn key={list._id} list={list} cards={cards} index={index} onOpenCard={(cardId) => dispatch(setActiveCardId(cardId))} />
+                  ))}
+                  {provided.placeholder}
+                  <AddListInline boardId={currentBoard._id} />
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        )}
+      </main>
+
+      {activeCard ? (
+        <CardModal
+          card={activeCard}
+          boardId={currentBoard._id}
+          lists={currentBoard.listOrder.map((listId) => currentBoard.listsById[listId])}
+          members={currentBoard.members || []}
+          onTyping={() => {
+            const socket = getSocket();
+            socket?.emit('board:typing', {
+              boardId: currentBoard._id,
+              userId: user?._id,
+              userName: user?.name,
+              cardId: activeCard._id,
+            });
+          }}
+        />
+      ) : null}
+      <BoardMenu />
+    </AppShell>
+  );
+}
+
+export default BoardPage;
+~~~
+
+### client\src\pages\DashboardPage.jsx
+~~~jsx
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import { fetchWorkspaces, createWorkspace, setActiveWorkspace } from '../features/workspaces/workspaceSlice';
+import {
+  createBoard,
+  fetchBoards,
+  pushRecentBoard,
+  toggleFavoriteBoard,
+} from '../features/boards/boardSlice';
+import { selectFavoriteBoardIds, selectRecentBoards } from '../features/boards/selectors';
+import { setCreateBoardOpen } from '../features/cards/uiSlice';
+import Modal from '../components/common/Modal';
+import Button from '../components/common/Button';
+import Input from '../components/common/Input';
+import Skeleton from '../components/common/Skeleton';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import AppShell from '../layouts/AppShell';
+
+const boardBackgroundOptions = [
+  'linear-gradient(130deg, #0f766e, #06b6d4)',
+  'linear-gradient(130deg, #075985, #0e7490)',
+  'linear-gradient(130deg, #166534, #14b8a6)',
+  'linear-gradient(130deg, #1d4ed8, #0ea5e9)',
+  'linear-gradient(130deg, #111827, #1f2937)',
+];
+
+function DashboardPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { user } = useSelector((state) => state.auth);
+  const { items: workspaces, status: workspaceStatus, meta: workspaceMeta, activeWorkspaceId } = useSelector(
+    (state) => state.workspaces,
+  );
+  const { boards, boardsMeta, status: boardsStatus } = useSelector((state) => state.boards);
+  const favoriteBoardIds = useSelector(selectFavoriteBoardIds);
+  const recentBoards = useSelector(selectRecentBoards);
+  const { createBoardOpen } = useSelector((state) => state.ui);
+
+  const [boardForm, setBoardForm] = useState({
+    title: '',
+    backgroundType: 'gradient',
+    backgroundValue: boardBackgroundOptions[0],
+  });
+  const [workspaceName, setWorkspaceName] = useState('');
+
+  useEffect(() => {
+    dispatch(fetchWorkspaces({ page: 1, limit: 10 }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!activeWorkspaceId && workspaces.length > 0) {
+      dispatch(setActiveWorkspace(workspaces[0]._id));
+    }
+  }, [dispatch, activeWorkspaceId, workspaces]);
+
+  useEffect(() => {
+    if (activeWorkspaceId) {
+      dispatch(fetchBoards({ workspaceId: activeWorkspaceId, page: 1, limit: 12 }));
+    }
+  }, [dispatch, activeWorkspaceId]);
+
+  const hasMoreBoards = useMemo(() => {
+    if (!boardsMeta) return false;
+    return boardsMeta.page < boardsMeta.totalPages;
+  }, [boardsMeta]);
+
+  const sentinelRef = useInfiniteScroll(
+    () => {
+      if (activeWorkspaceId && hasMoreBoards) {
+        dispatch(
+          fetchBoards({
+            workspaceId: activeWorkspaceId,
+            page: boardsMeta.page + 1,
+            limit: boardsMeta.limit,
+          }),
+        );
+      }
+    },
+    hasMoreBoards,
+  );
+
+  const onCreateBoard = async () => {
+    if (!boardForm.title.trim() || !activeWorkspaceId) return;
+
+    const result = await dispatch(
+      createBoard({
+        workspaceId: activeWorkspaceId,
+        title: boardForm.title.trim(),
+        background: {
+          type: boardForm.backgroundType,
+          value: boardForm.backgroundValue,
+        },
+      }),
+    );
+
+    if (createBoard.fulfilled.match(result)) {
+      toast.success('Board created');
+      dispatch(setCreateBoardOpen(false));
+      setBoardForm({
+        title: '',
+        backgroundType: 'gradient',
+        backgroundValue: boardBackgroundOptions[0],
+      });
+    } else {
+      toast.error(result.payload || 'Unable to create board');
+    }
+  };
+
+  const onCreateWorkspace = async () => {
+    if (!workspaceName.trim()) return;
+    const result = await dispatch(createWorkspace({ name: workspaceName.trim(), description: '' }));
+    if (createWorkspace.fulfilled.match(result)) {
+      toast.success('Workspace created');
+      setWorkspaceName('');
+    } else {
+      toast.error(result.payload || 'Failed to create workspace');
+    }
+  };
+
+  const openBoard = (boardId) => {
+    dispatch(pushRecentBoard(boardId));
+    navigate(`/board/${boardId}`);
+  };
+
+  return (
+    <AppShell
+      workspaceId={activeWorkspaceId}
+      onWorkspaceChange={(nextWorkspaceId) => dispatch(setActiveWorkspace(nextWorkspaceId))}
+      title="Dashboard"
+    >
+      <div className="space-y-6 rise-in">
+        <header className="app-card overflow-hidden p-5 md:p-6">
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-app bg-panel-soft px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">
+                <span className="app-dot" />
+                Workspace overview
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">Welcome back, {user?.name || 'Member'}</h1>
+              <p className="mt-2 max-w-2xl text-sm text-app-muted md:text-base">
+                Keep momentum with realtime boards, focused execution, and one place for project context.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:min-w-[18rem]">
+              <div className="rounded-xl border border-app bg-panel-soft p-3">
+                <p className="text-xs text-app-muted">Boards</p>
+                <p className="mt-1 text-2xl font-black">{boards.length}</p>
+              </div>
+              <div className="rounded-xl border border-app bg-panel-soft p-3">
+                <p className="text-xs text-app-muted">Favorites</p>
+                <p className="mt-1 text-2xl font-black">{favoriteBoardIds.length}</p>
+              </div>
+              <div className="rounded-xl border border-app bg-panel-soft p-3">
+                <p className="text-xs text-app-muted">Recent</p>
+                <p className="mt-1 text-2xl font-black">{recentBoards.length}</p>
+              </div>
+              <div className="rounded-xl border border-app bg-panel-soft p-3">
+                <p className="text-xs text-app-muted">Workspaces</p>
+                <p className="mt-1 text-2xl font-black">{workspaceMeta?.total || workspaces.length || 0}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button onClick={() => dispatch(setCreateBoardOpen(true))}>Create board</Button>
+            <Button variant="secondary" onClick={() => navigate('/settings/profile')}>
+              Open profile
+            </Button>
+          </div>
+        </header>
+
+        <section className="app-card p-4 md:p-5">
+          <h2 className="text-lg font-black tracking-tight">Workspace tools</h2>
+          <p className="mt-1 text-sm text-app-muted">Spin up a workspace and invite your team into focused execution.</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+            <Input
+              placeholder="Create workspace"
+              value={workspaceName}
+              onChange={(event) => setWorkspaceName(event.target.value)}
+            />
+            <Button className="w-full md:w-auto" onClick={onCreateWorkspace}>
+              Add workspace
+            </Button>
+          </div>
+        </section>
+
+        {recentBoards.length > 0 ? (
+          <section>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-xl font-black tracking-tight">Pick up where you left off</h2>
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-app-muted">Recent boards</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {recentBoards.map((board) => (
+                <button
+                  key={`recent-${board._id}`}
+                  className="group relative min-h-32 overflow-hidden rounded-2xl border border-white/15 p-4 text-left text-white shadow-soft"
+                  style={{ background: board.background?.value || boardBackgroundOptions[0] }}
+                  onClick={() => openBoard(board._id)}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/15 to-black/55" />
+                  <div className="relative z-10">
+                    <h3 className="line-clamp-2 text-lg font-black tracking-tight">{board.title}</h3>
+                    <p className="mt-7 text-xs font-semibold uppercase tracking-[0.15em] opacity-90">Open board</p>
+                  </div>
+                  <span className="absolute right-3 top-3 rounded-full border border-white/40 bg-black/25 px-2 py-0.5 text-[10px] font-semibold opacity-0 transition group-hover:opacity-100">
+                    Continue
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-xl font-black tracking-tight">Boards</h2>
+            {workspaceStatus === 'loading' || boardsStatus === 'loading' ? (
+              <span className="text-xs uppercase tracking-[0.15em] text-app-muted">Loading</span>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {workspaceStatus === 'loading' && boards.length === 0
+              ? Array.from({ length: 6 }).map((_, idx) => <Skeleton key={`board-skeleton-${idx}`} className="h-32" />)
+              : boards.map((board) => {
+                  const isFavorite = favoriteBoardIds.includes(board._id);
+                  return (
+                    <article key={board._id} className="group relative overflow-hidden rounded-2xl border border-white/20 shadow-soft">
+                      <button
+                        className="relative min-h-32 w-full p-4 text-left text-white transition group-hover:translate-y-[-2px]"
+                        style={{ background: board.background?.value || boardBackgroundOptions[0] }}
+                        onClick={() => openBoard(board._id)}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/65" />
+                        <div className="relative z-10">
+                          <h3 className="line-clamp-2 text-lg font-black tracking-tight">{board.title}</h3>
+                          <p className="mt-6 text-xs opacity-90">
+                            Updated {new Date(board.updatedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </button>
+                      <button
+                        className="absolute right-2 top-2 rounded-full border border-white/45 bg-black/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white"
+                        onClick={() => dispatch(toggleFavoriteBoard(board._id))}
+                        title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {isFavorite ? 'Saved' : 'Save'}
+                      </button>
+                    </article>
+                  );
+                })}
+          </div>
+
+          <div ref={sentinelRef} className="h-8" />
+        </section>
+      </div>
+
+      <Modal open={createBoardOpen} onClose={() => dispatch(setCreateBoardOpen(false))} title="Create Board">
+        <div className="space-y-4">
+          <Input
+            label="Board title"
+            value={boardForm.title}
+            onChange={(event) => setBoardForm((prev) => ({ ...prev, title: event.target.value }))}
+            placeholder="Product Launch"
+          />
+
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-semibold text-app-muted">Background Type</span>
+            <select
+              className="rounded-xl border border-app bg-panel px-3 py-2.5 text-app"
+              value={boardForm.backgroundType}
+              onChange={(event) => setBoardForm((prev) => ({ ...prev, backgroundType: event.target.value }))}
+            >
+              <option value="gradient">Gradient</option>
+              <option value="color">Color</option>
+              <option value="image">Image URL</option>
+            </select>
+          </label>
+
+          {boardForm.backgroundType === 'gradient' ? (
+            <div>
+              <p className="mb-2 text-sm font-semibold text-app-muted">Choose gradient</p>
+              <div className="grid grid-cols-5 gap-2">
+                {boardBackgroundOptions.map((gradient) => (
+                  <button
+                    key={gradient}
+                    className={`h-10 rounded-lg border ${
+                      boardForm.backgroundValue === gradient ? 'border-white' : 'border-app'
+                    }`}
+                    style={{ background: gradient }}
+                    onClick={() => setBoardForm((prev) => ({ ...prev, backgroundValue: gradient }))}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {boardForm.backgroundType === 'color' ? (
+            <label className="flex items-center gap-2 text-sm text-app-muted">
+              <span>Color</span>
+              <input
+                type="color"
+                value={boardForm.backgroundValue.startsWith('#') ? boardForm.backgroundValue : '#0f766e'}
+                onChange={(event) => setBoardForm((prev) => ({ ...prev, backgroundValue: event.target.value }))}
+              />
+            </label>
+          ) : null}
+
+          {boardForm.backgroundType === 'image' ? (
+            <Input
+              label="Image URL"
+              value={boardForm.backgroundValue}
+              onChange={(event) => setBoardForm((prev) => ({ ...prev, backgroundValue: event.target.value }))}
+            />
+          ) : null}
+
+          <Button className="w-full" onClick={onCreateBoard}>
+            Create board
+          </Button>
+        </div>
+      </Modal>
+    </AppShell>
+  );
+}
+
+export default DashboardPage;
+~~~
+
+### client\src\pages\ForgotPasswordPage.jsx
+~~~jsx
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import toast from 'react-hot-toast';
+import AuthLayout from '../layouts/AuthLayout';
+import Input from '../components/common/Input';
+import Button from '../components/common/Button';
+import { forgotPassword } from '../features/auth/authSlice';
+
+function ForgotPasswordPage() {
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState('');
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    const result = await dispatch(forgotPassword({ email }));
+
+    if (forgotPassword.fulfilled.match(result)) {
+      toast.success(result.payload.message || 'If email exists, reset instructions were sent');
+      setEmail('');
+      return;
+    }
+
+    toast.error(result.payload || 'Request failed');
+  };
+
+  return (
+    <AuthLayout
+      title="Reset password"
+      subtitle="Enter your email and we will trigger the secure reset flow."
+      footer={
+        <Link to="/login" className="font-semibold text-accent underline underline-offset-4">
+          Back to login
+        </Link>
+      }
+    >
+      <form className="space-y-4" onSubmit={onSubmit}>
+        <Input
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
+        <Button className="w-full" type="submit">
+          Send reset instructions
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export default ForgotPasswordPage;
+~~~
+
+### client\src\pages\LoginPage.jsx
+~~~jsx
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import AuthLayout from '../layouts/AuthLayout';
+import Input from '../components/common/Input';
+import Button from '../components/common/Button';
+import { loginUser } from '../features/auth/authSlice';
+
+function LoginPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const authStatus = useSelector((state) => state.auth.status);
+
+  const [form, setForm] = useState({ email: '', password: '' });
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+
+    const result = await dispatch(loginUser(form));
+    if (loginUser.fulfilled.match(result)) {
+      toast.success('Welcome back');
+      navigate(location.state?.from?.pathname || '/dashboard');
+    } else {
+      toast.error(result.payload || 'Login failed');
+    }
+  };
+
+  return (
+    <AuthLayout
+      title="Sign in"
+      subtitle="Access your workspace command center and continue shipping."
+      footer={
+        <>
+          New here?{' '}
+          <Link to="/signup" className="font-semibold text-accent underline underline-offset-4">
+            Create account
+          </Link>
+        </>
+      }
+    >
+      <form className="space-y-4" onSubmit={onSubmit}>
+        <Input
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+          required
+        />
+        <Input
+          label="Password"
+          type="password"
+          value={form.password}
+          onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+          required
+        />
+        <Button className="w-full" type="submit" loading={authStatus === 'loading'}>
+          Continue to dashboard
+        </Button>
+      </form>
+
+      <Link
+        to="/forgot-password"
+        className="mt-4 inline-block text-sm font-semibold text-accent underline underline-offset-4"
+      >
+        Forgot password?
+      </Link>
+    </AuthLayout>
+  );
+}
+
+export default LoginPage;
+~~~
+
+### client\src\pages\NotFoundPage.jsx
+~~~jsx
+import { Link } from 'react-router-dom';
+
+function NotFoundPage() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-app px-4 text-center text-app">
+      <p className="inline-flex items-center gap-2 rounded-full border border-app bg-panel-soft px-4 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">
+        <span className="app-dot" />
+        Missing route
+      </p>
+      <h1 className="text-6xl font-black tracking-tight">404</h1>
+      <p className="max-w-md text-app-muted">The page you requested does not exist or was moved to another path.</p>
+      <Link to="/dashboard" className="rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent-strong">
+        Back to dashboard
+      </Link>
+    </div>
+  );
+}
+
+export default NotFoundPage;
+~~~
+
+### client\src\pages\ProfilePage.jsx
+~~~jsx
+import { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import AppShell from '../layouts/AppShell';
+import {
+  fetchCurrentUserProfile,
+  updateCurrentUserProfile,
+} from '../features/auth/authSlice';
+import { ensureUserProfile } from '../features/auth/profileDefaults';
+
+const tabs = [
+  { id: 'personal', label: 'Personal' },
+  { id: 'professional', label: 'Professional' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'education', label: 'Education' },
+  { id: 'social', label: 'Social' },
+  { id: 'account', label: 'Account' },
+];
+
+const workingDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const formatLabel = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+
+const readValue = (source, path, fallback = '') => {
+  if (!source) return fallback;
+  return path.reduce((acc, key) => (acc === undefined || acc === null ? undefined : acc[key]), source) ?? fallback;
+};
+
+const updateAtPath = (source, path, value) => {
+  if (path.length === 0) return source;
+  const [head, ...rest] = path;
+  return {
+    ...(source || {}),
+    [head]:
+      rest.length === 0
+        ? value
+        : updateAtPath(source && typeof source === 'object' ? source[head] : undefined, rest, value),
+  };
+};
+
+function ProfilePage() {
+  const dispatch = useDispatch();
+  const { user, profileStatus } = useSelector((state) => state.auth);
+  const [activeTab, setActiveTab] = useState('personal');
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(null);
+
+  useEffect(() => {
+    dispatch(fetchCurrentUserProfile());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!user) return;
+    setDraft(ensureUserProfile(user));
+  }, [user]);
+
+  const safeUser = useMemo(() => ensureUserProfile(draft || user), [draft, user]);
+
+  const setField = (path, value) => {
+    setDraft((previous) => updateAtPath(previous, path, value));
+  };
+
+  const completion = safeUser?.profile?.completion || 0;
+  const displayName =
+    safeUser?.name ||
+    [safeUser?.profile?.personal?.firstName, safeUser?.profile?.personal?.lastName]
+      .filter(Boolean)
+      .join(' ');
+
+  const onSave = async () => {
+    if (!draft) return;
+    const profilePayload = { ...(draft.profile || {}) };
+    delete profilePayload.completion;
+
+    const payload = {
+      name: draft.name,
+      avatar: draft.avatar,
+      profile: profilePayload,
+    };
+    const result = await dispatch(updateCurrentUserProfile(payload));
+    if (updateCurrentUserProfile.fulfilled.match(result)) {
+      toast.success('Profile updated');
+      setEditing(false);
+    } else {
+      toast.error(result.payload || 'Failed to update profile');
+    }
+  };
+
+  const onCancel = () => {
+    setDraft(ensureUserProfile(user));
+    setEditing(false);
+  };
+
+  return (
+    <AppShell title="My Profile">
+      <main className="space-y-6 rise-in">
+        <header className="app-card flex flex-wrap items-center justify-between gap-3 p-5">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-app md:text-4xl">My Profile</h1>
+            <p className="mt-2 text-sm text-app-muted md:text-base">Manage your personal information and preferences</p>
+          </div>
+          <div className="flex gap-2">
+            {editing ? (
+              <>
+                <button
+                  className="rounded-xl border border-app bg-panel-soft px-5 py-2 font-semibold text-app"
+                  onClick={onCancel}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="rounded-xl bg-accent px-5 py-2 font-semibold text-white hover:bg-accent-strong"
+                  onClick={onSave}
+                >
+                  Save
+                </button>
+              </>
+            ) : (
+              <button
+                className="rounded-xl bg-accent px-5 py-2 font-semibold text-white hover:bg-accent-strong"
+                onClick={() => setEditing(true)}
+              >
+                Edit Profile
+              </button>
+            )}
+          </div>
+        </header>
+
+        <section className="grid gap-5 lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
+          <article className="app-card p-5">
+            <div className="mx-auto flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-4 border-app bg-panel-soft">
+              {safeUser?.avatar ? (
+                <img src={safeUser.avatar} alt={displayName} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-4xl font-bold text-app">{displayName?.slice(0, 1)?.toUpperCase() || 'U'}</span>
+              )}
+            </div>
+
+            <h2 className="mt-5 text-center text-3xl font-black tracking-tight text-app">{displayName || 'User'}</h2>
+            <p className="mt-1 text-center text-base text-app-muted">
+              {safeUser?.profile?.professional?.jobTitle || 'Team Member'}
+            </p>
+            <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-app bg-panel-soft px-4 py-1 text-sm font-semibold text-app-muted">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              {safeUser?.profile?.account?.status || 'offline'}
+            </div>
+
+            <div className="mt-8">
+              <div className="mb-2 flex items-center justify-between text-sm text-app-muted">
+                <span>Profile Completion</span>
+                <span>{completion}%</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-panel-soft">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
+                />
+              </div>
+            </div>
+          </article>
+
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-app bg-panel-soft p-2">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                    activeTab === tab.id ? 'bg-panel text-app' : 'text-app-muted hover:text-app'
+                  }`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <section className="app-card p-5">
+              {activeTab === 'personal' ? (
+                <div className="space-y-5">
+                  <h3 className="text-3xl font-black tracking-tight md:text-4xl">Basic Information</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">First Name</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'personal', 'firstName'])}
+                        onChange={(event) => setField(['profile', 'personal', 'firstName'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Last Name</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'personal', 'lastName'])}
+                        onChange={(event) => setField(['profile', 'personal', 'lastName'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Phone Number</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'personal', 'phoneNumber'])}
+                        onChange={(event) => setField(['profile', 'personal', 'phoneNumber'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Personal Email</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'personal', 'personalEmail'])}
+                        onChange={(event) => setField(['profile', 'personal', 'personalEmail'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Date of Birth</span>
+                      <input
+                        type="date"
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'personal', 'dateOfBirth'], '').slice(0, 10)}
+                        onChange={(event) => setField(['profile', 'personal', 'dateOfBirth'], event.target.value || null)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Gender</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'personal', 'gender'])}
+                        onChange={(event) => setField(['profile', 'personal', 'gender'], event.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">About</span>
+                    <textarea
+                      className="profile-field min-h-28"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['profile', 'personal', 'about'])}
+                      onChange={(event) => setField(['profile', 'personal', 'about'], event.target.value)}
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              {activeTab === 'professional' ? (
+                <div className="space-y-5">
+                  <h3 className="text-3xl font-black tracking-tight md:text-4xl">Work Information</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Job Title</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'professional', 'jobTitle'])}
+                        onChange={(event) => setField(['profile', 'professional', 'jobTitle'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Department</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'professional', 'department'])}
+                        onChange={(event) => setField(['profile', 'professional', 'department'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Years of Experience</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'professional', 'yearsOfExperience'])}
+                        onChange={(event) =>
+                          setField(['profile', 'professional', 'yearsOfExperience'], event.target.value)
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Work Location</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'professional', 'workLocation'])}
+                        onChange={(event) =>
+                          setField(['profile', 'professional', 'workLocation'], event.target.value)
+                        }
+                      />
+                    </label>
+                  </div>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Skills (comma separated)</span>
+                    <input
+                      className="profile-field"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['profile', 'professional', 'skills'], []).join(', ')}
+                      onChange={(event) =>
+                        setField(
+                          ['profile', 'professional', 'skills'],
+                          event.target.value.split(',').map((item) => item.trim()).filter(Boolean),
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              {activeTab === 'schedule' ? (
+                <div className="space-y-5">
+                  <h3 className="text-3xl font-black tracking-tight md:text-4xl">Working Hours</h3>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Time Zone</span>
+                    <input
+                      className="profile-field"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['profile', 'schedule', 'timeZone'])}
+                      onChange={(event) => setField(['profile', 'schedule', 'timeZone'], event.target.value)}
+                    />
+                  </label>
+
+                  <div className="rounded-xl border border-app">
+                    {workingDays.map((day) => (
+                      <div key={day} className="grid gap-2 border-b border-app px-3 py-3 last:border-b-0 md:grid-cols-4">
+                        <div className="font-semibold">{formatLabel(day)}</div>
+                        <label className="flex items-center gap-2 text-sm text-app-muted">
+                          <input
+                            type="checkbox"
+                            disabled={!editing}
+                            checked={Boolean(readValue(safeUser, ['profile', 'schedule', 'workingHours', day, 'enabled'], false))}
+                            onChange={(event) =>
+                              setField(
+                                ['profile', 'schedule', 'workingHours', day, 'enabled'],
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          Active
+                        </label>
+                        <input
+                          type="time"
+                          className="profile-field"
+                          disabled={!editing}
+                          value={readValue(safeUser, ['profile', 'schedule', 'workingHours', day, 'start'])}
+                          onChange={(event) =>
+                            setField(['profile', 'schedule', 'workingHours', day, 'start'], event.target.value)
+                          }
+                        />
+                        <input
+                          type="time"
+                          className="profile-field"
+                          disabled={!editing}
+                          value={readValue(safeUser, ['profile', 'schedule', 'workingHours', day, 'end'])}
+                          onChange={(event) =>
+                            setField(['profile', 'schedule', 'workingHours', day, 'end'], event.target.value)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {activeTab === 'education' ? (
+                <div className="space-y-5">
+                  <h3 className="text-3xl font-black tracking-tight md:text-4xl">Education</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Degree</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'education', 'degree'])}
+                        onChange={(event) => setField(['profile', 'education', 'degree'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Institution</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'education', 'institution'])}
+                        onChange={(event) => setField(['profile', 'education', 'institution'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Field of Study</span>
+                      <input
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'education', 'fieldOfStudy'])}
+                        onChange={(event) => setField(['profile', 'education', 'fieldOfStudy'], event.target.value)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">Start Date</span>
+                      <input
+                        type="date"
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'education', 'startDate'], '').slice(0, 10)}
+                        onChange={(event) => setField(['profile', 'education', 'startDate'], event.target.value || null)}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm font-semibold text-app-muted">End Date</span>
+                      <input
+                        type="date"
+                        className="profile-field"
+                        disabled={!editing}
+                        value={readValue(safeUser, ['profile', 'education', 'endDate'], '').slice(0, 10)}
+                        onChange={(event) => setField(['profile', 'education', 'endDate'], event.target.value || null)}
+                      />
+                    </label>
+                  </div>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Description</span>
+                    <textarea
+                      className="profile-field min-h-24"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['profile', 'education', 'description'])}
+                      onChange={(event) => setField(['profile', 'education', 'description'], event.target.value)}
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              {activeTab === 'social' ? (
+                <div className="space-y-5">
+                  <h3 className="text-3xl font-black tracking-tight md:text-4xl">Social Profiles</h3>
+                  <div className="grid gap-4">
+                    {['github', 'linkedin', 'website', 'x'].map((field) => (
+                      <label key={field} className="space-y-1">
+                        <span className="text-sm font-semibold text-app-muted">{formatLabel(field)}</span>
+                        <input
+                          className="profile-field"
+                          disabled={!editing}
+                          value={readValue(safeUser, ['profile', 'social', field])}
+                          onChange={(event) => setField(['profile', 'social', field], event.target.value)}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {activeTab === 'account' ? (
+                <div className="space-y-5">
+                  <h3 className="text-3xl font-black tracking-tight md:text-4xl">Account Settings</h3>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Display Name</span>
+                    <input
+                      className="profile-field"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['name'])}
+                      onChange={(event) => setField(['name'], event.target.value)}
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Primary Email</span>
+                    <input className="profile-field" disabled value={readValue(safeUser, ['email'])} />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Secondary Email</span>
+                    <input
+                      className="profile-field"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['profile', 'account', 'secondaryEmail'])}
+                      onChange={(event) => setField(['profile', 'account', 'secondaryEmail'], event.target.value)}
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-app-muted">Status</span>
+                    <select
+                      className="profile-field"
+                      disabled={!editing}
+                      value={readValue(safeUser, ['profile', 'account', 'status'], 'offline')}
+                      onChange={(event) => setField(['profile', 'account', 'status'], event.target.value)}
+                    >
+                      <option value="online">Online</option>
+                      <option value="offline">Offline</option>
+                      <option value="away">Away</option>
+                      <option value="busy">Busy</option>
+                    </select>
+                  </label>
+                </div>
+              ) : null}
+            </section>
+          </div>
+        </section>
+      </main>
+
+      {profileStatus === 'loading' ? (
+        <div className="fixed bottom-5 right-5 rounded-xl border border-app bg-panel px-4 py-2 text-sm text-app-muted">
+          Updating profile...
+        </div>
+      ) : null}
+    </AppShell>
+  );
+}
+
+export default ProfilePage;
+~~~
+
+### client\src\pages\SignupPage.jsx
+~~~jsx
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import AuthLayout from '../layouts/AuthLayout';
+import Input from '../components/common/Input';
+import Button from '../components/common/Button';
+import { registerUser } from '../features/auth/authSlice';
+
+function SignupPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const authStatus = useSelector((state) => state.auth.status);
+
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+
+    if (form.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    const result = await dispatch(registerUser(form));
+    if (registerUser.fulfilled.match(result)) {
+      toast.success('Account created');
+      navigate('/dashboard');
+    } else {
+      toast.error(result.payload || 'Registration failed');
+    }
+  };
+
+  return (
+    <AuthLayout
+      title="Create account"
+      subtitle="Start a polished, realtime project workflow in minutes."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-accent underline underline-offset-4">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form className="space-y-4" onSubmit={onSubmit}>
+        <Input
+          label="Full Name"
+          value={form.name}
+          onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+          required
+        />
+        <Input
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+          required
+        />
+        <Input
+          label="Password"
+          type="password"
+          value={form.password}
+          onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+          hint="Use at least 8 characters"
+          required
+        />
+        <Button className="w-full" type="submit" loading={authStatus === 'loading'}>
+          Create workspace account
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export default SignupPage;
+~~~
+
+### client\src\styles\index.css
+~~~css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-bg: #eef2f5;
+  --app-bg-strong: #dde4ea;
+  --app-panel: rgba(255, 255, 255, 0.9);
+  --app-panel-soft: rgba(255, 255, 255, 0.72);
+  --app-hover: rgba(14, 25, 39, 0.06);
+  --app-text: #132033;
+  --app-muted: #4d6073;
+  --app-border: rgba(19, 32, 51, 0.16);
+  --app-accent: #0e7490;
+  --app-accent-strong: #155e75;
+  --app-accent-soft: rgba(14, 116, 144, 0.12);
+  --app-danger: #dc2626;
+  --app-success: #047857;
+  --app-shadow: 0 22px 50px -30px rgba(6, 15, 27, 0.55);
+}
+
+.dark {
+  --app-bg: #070f1a;
+  --app-bg-strong: #111d2a;
+  --app-panel: rgba(14, 25, 38, 0.85);
+  --app-panel-soft: rgba(17, 34, 50, 0.72);
+  --app-hover: rgba(255, 255, 255, 0.07);
+  --app-text: #eff6ff;
+  --app-muted: #9ab0c6;
+  --app-border: rgba(169, 193, 219, 0.2);
+  --app-accent: #22d3ee;
+  --app-accent-strong: #06b6d4;
+  --app-accent-soft: rgba(34, 211, 238, 0.17);
+  --app-danger: #fb7185;
+  --app-success: #34d399;
+  --app-shadow: 0 30px 70px -35px rgba(0, 0, 0, 0.9);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Space Grotesk', 'Sora', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(14, 116, 144, 0.26), transparent 38%),
+    radial-gradient(circle at 100% 14%, rgba(20, 184, 166, 0.18), transparent 33%),
+    radial-gradient(circle at 70% 100%, rgba(6, 182, 212, 0.16), transparent 35%),
+    var(--app-bg);
+  background-attachment: fixed;
+  color: var(--app-text);
+  transition: background-color 240ms ease, color 240ms ease;
+  line-height: 1.45;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.bg-app {
+  background-color: var(--app-bg);
+}
+
+.bg-app-strong {
+  background-color: var(--app-bg-strong);
+}
+
+.bg-panel {
+  background-color: var(--app-panel);
+  backdrop-filter: blur(14px);
+}
+
+.bg-panel-soft {
+  background-color: var(--app-panel-soft);
+}
+
+.border-app {
+  border-color: var(--app-border);
+}
+
+.text-app {
+  color: var(--app-text);
+}
+
+.text-app-muted {
+  color: var(--app-muted);
+}
+
+.hover\:bg-hover:hover {
+  background-color: var(--app-hover);
+}
+
+.bg-accent {
+  background-color: var(--app-accent);
+}
+
+.bg-accent-strong {
+  background-color: var(--app-accent-strong);
+}
+
+.text-accent {
+  color: var(--app-accent);
+}
+
+.bg-accent-soft {
+  background-color: var(--app-accent-soft);
+}
+
+.shadow-soft {
+  box-shadow: var(--app-shadow);
+}
+
+.app-card {
+  border: 1px solid var(--app-border);
+  background: linear-gradient(180deg, var(--app-panel), var(--app-panel-soft));
+  border-radius: 1rem;
+  box-shadow: var(--app-shadow);
+}
+
+.app-dot {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--app-accent), #14b8a6);
+}
+
+.profile-field {
+  width: 100%;
+  border-radius: 0.85rem;
+  border: 1px solid var(--app-border);
+  background: var(--app-panel);
+  color: var(--app-text);
+  padding: 0.72rem 0.9rem;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profile-field:focus {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 3px var(--app-accent-soft);
+}
+
+.profile-field:disabled {
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
+.modal-enter {
+  animation: modalEnter 160ms ease;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: riseIn 260ms ease;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--app-border);
+  border-radius: 999px;
+}
+~~~
+
+### client\tailwind.config.js
+~~~js
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#ecfeff',
+          100: '#cffafe',
+          300: '#67e8f9',
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
+        },
+      },
+      boxShadow: {
+        soft: '0 22px 50px -30px rgba(6, 15, 27, 0.55)',
+      },
+    },
+  },
+  plugins: [],
+};
+~~~
+

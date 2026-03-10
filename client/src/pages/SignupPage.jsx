@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -34,11 +34,11 @@ function SignupPage() {
   return (
     <AuthLayout
       title="Create account"
-      subtitle="Start organizing projects with boards, cards, and workflows"
+      subtitle="Start a polished, realtime project workflow in minutes."
       footer={
         <>
           Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-brand-700 underline">
+          <Link to="/login" className="font-semibold text-accent underline underline-offset-4">
             Sign in
           </Link>
         </>
@@ -63,10 +63,11 @@ function SignupPage() {
           type="password"
           value={form.password}
           onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+          hint="Use at least 8 characters"
           required
         />
         <Button className="w-full" type="submit" loading={authStatus === 'loading'}>
-          Sign up
+          Create workspace account
         </Button>
       </form>
     </AuthLayout>
@@ -74,5 +75,3 @@ function SignupPage() {
 }
 
 export default SignupPage;
-
-

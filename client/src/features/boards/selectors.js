@@ -1,16 +1,23 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-const isDueMatch = (card, dueDateStatus) => {
-  if (!dueDateStatus) return true;
-  if (!card.dueDate) return dueDateStatus === 'none';
+const isDateRangeMatch = (card, dateRange) => {
+  if (!dateRange) return true;
+  if (!card.dueDate) return dateRange === 'none';
 
   const due = new Date(card.dueDate).getTime();
   const now = Date.now();
-  const twoDays = 2 * 24 * 60 * 60 * 1000;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const weekFromNow = now + 7 * 24 * 60 * 60 * 1000;
+  const monthFromNow = now + 30 * 24 * 60 * 60 * 1000;
 
-  if (dueDateStatus === 'overdue') return due < now;
-  if (dueDateStatus === 'soon') return due >= now && due <= now + twoDays;
-  if (dueDateStatus === 'scheduled') return due > now + twoDays;
+  if (dateRange === 'overdue') return due < now;
+  if (dateRange === 'today') return due >= today.getTime() && due < tomorrow.getTime();
+  if (dateRange === 'week') return due >= now && due <= weekFromNow;
+  if (dateRange === 'month') return due >= now && due <= monthFromNow;
+  if (dateRange === 'upcoming') return due > now;
   return true;
 };
 
@@ -45,18 +52,17 @@ export const selectFilteredBoardLists = createSelector(
         .filter(Boolean)
         .filter((card) => {
           if (card.archived) return false;
+          const statusMatch = filters.status ? card.status === filters.status : true;
+          const priorityMatch = filters.priority ? card.priority === filters.priority : true;
           const memberMatch = filters.memberId ? (card.members || []).includes(filters.memberId) : true;
-          const labelMatch = filters.labelColor
-            ? (card.labels || []).some((label) => label.color === filters.labelColor)
-            : true;
           const textMatch = filters.query
-            ? [card.title, card.description]
+            ? [card.title, card.description, card.status, card.priority]
                 .join(' ')
                 .toLowerCase()
                 .includes(filters.query.toLowerCase())
             : true;
-          const dueMatch = isDueMatch(card, filters.dueDateStatus);
-          return memberMatch && labelMatch && textMatch && dueMatch;
+          const dueMatch = isDateRangeMatch(card, filters.dateRange);
+          return statusMatch && priorityMatch && memberMatch && textMatch && dueMatch;
         });
 
       return { list, cards };

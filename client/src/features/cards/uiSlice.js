@@ -1,8 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const getInitialTheme = () => {
-  if (typeof window === 'undefined') return 'light';
-  return window.localStorage.getItem('trello_clone_theme') || 'light';
+  if (typeof window === 'undefined') return 'dark';
+  return window.localStorage.getItem('trello_clone_theme') || 'dark';
 };
 
 const uiSlice = createSlice({
