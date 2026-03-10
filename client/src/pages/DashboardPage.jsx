@@ -2,8 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { fetchWorkspaces, createWorkspace } from '../features/workspaces/workspaceSlice';
-import { createBoard, fetchBoards, pushRecentBoard } from '../features/boards/boardSlice';
+import { fetchWorkspaces, createWorkspace, setActiveWorkspace } from '../features/workspaces/workspaceSlice';
+import {
+  createBoard,
+  fetchBoards,
+  pushRecentBoard,
+  toggleFavoriteBoard,
+} from '../features/boards/boardSlice';
+import { selectFavoriteBoardIds, selectRecentBoards } from '../features/boards/selectors';
 import { logoutUser } from '../features/auth/authSlice';
 import { setCreateBoardOpen } from '../features/cards/uiSlice';
 import Modal from '../components/common/Modal';
@@ -11,19 +17,26 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Skeleton from '../components/common/Skeleton';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import AppShell from '../layouts/AppShell';
 
 function DashboardPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const { user } = useSelector((state) => state.auth);
-  const { items: workspaces, status: workspaceStatus, meta: workspaceMeta } = useSelector(
+  const { items: workspaces, status: workspaceStatus, meta: workspaceMeta, activeWorkspaceId } = useSelector(
     (state) => state.workspaces,
   );
-  const { boards, boardsMeta, recentBoardIds } = useSelector((state) => state.boards);
+  const { boards, boardsMeta } = useSelector((state) => state.boards);
+  const favoriteBoardIds = useSelector(selectFavoriteBoardIds);
+  const recentBoards = useSelector(selectRecentBoards);
   const { createBoardOpen } = useSelector((state) => state.ui);
 
-  const [workspaceId, setWorkspaceId] = useState('');
-  const [boardForm, setBoardForm] = useState({ title: '', backgroundValue: '#0b78de' });
+  const [boardForm, setBoardForm] = useState({
+    title: '',
+    backgroundType: 'gradient',
+    backgroundValue: 'linear-gradient(120deg, #0b78de, #14b8a6)',
+  });
   const [workspaceName, setWorkspaceName] = useState('');
 
   useEffect(() => {
@@ -31,16 +44,16 @@ function DashboardPage() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (!workspaceId && workspaces.length > 0) {
-      setWorkspaceId(workspaces[0]._id);
+    if (!activeWorkspaceId && workspaces.length > 0) {
+      dispatch(setActiveWorkspace(workspaces[0]._id));
     }
-  }, [workspaceId, workspaces]);
+  }, [dispatch, activeWorkspaceId, workspaces]);
 
   useEffect(() => {
-    if (workspaceId) {
-      dispatch(fetchBoards({ workspaceId, page: 1, limit: 12 }));
+    if (activeWorkspaceId) {
+      dispatch(fetchBoards({ workspaceId: activeWorkspaceId, page: 1, limit: 12 }));
     }
-  }, [dispatch, workspaceId]);
+  }, [dispatch, activeWorkspaceId]);
 
   const hasMoreBoards = useMemo(() => {
     if (!boardsMeta) return false;
@@ -49,30 +62,41 @@ function DashboardPage() {
 
   const sentinelRef = useInfiniteScroll(
     () => {
-      if (workspaceId && hasMoreBoards) {
-        dispatch(fetchBoards({ workspaceId, page: boardsMeta.page + 1, limit: boardsMeta.limit }));
+      if (activeWorkspaceId && hasMoreBoards) {
+        dispatch(
+          fetchBoards({
+            workspaceId: activeWorkspaceId,
+            page: boardsMeta.page + 1,
+            limit: boardsMeta.limit,
+          }),
+        );
       }
     },
     hasMoreBoards,
   );
 
-  const recentBoards = boards.filter((board) => recentBoardIds.includes(board._id));
-
   const onCreateBoard = async () => {
-    if (!boardForm.title.trim() || !workspaceId) return;
+    if (!boardForm.title.trim() || !activeWorkspaceId) return;
 
     const result = await dispatch(
       createBoard({
-        workspaceId,
+        workspaceId: activeWorkspaceId,
         title: boardForm.title.trim(),
-        background: { type: 'color', value: boardForm.backgroundValue },
+        background: {
+          type: boardForm.backgroundType,
+          value: boardForm.backgroundValue,
+        },
       }),
     );
 
     if (createBoard.fulfilled.match(result)) {
       toast.success('Board created');
       dispatch(setCreateBoardOpen(false));
-      setBoardForm({ title: '', backgroundValue: '#0b78de' });
+      setBoardForm({
+        title: '',
+        backgroundType: 'gradient',
+        backgroundValue: 'linear-gradient(120deg, #0b78de, #14b8a6)',
+      });
     } else {
       toast.error(result.payload || 'Unable to create board');
     }
@@ -95,58 +119,50 @@ function DashboardPage() {
   };
 
   return (
-    <main className="mx-auto max-w-7xl p-4 md:p-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/85 p-4 shadow-soft">
+    <AppShell
+      workspaceId={activeWorkspaceId}
+      onWorkspaceChange={(nextWorkspaceId) => dispatch(setActiveWorkspace(nextWorkspaceId))}
+      title="Dashboard"
+    >
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-app bg-panel p-4 shadow-soft">
         <div>
-          <p className="text-sm text-slate-500">Welcome back</p>
-          <h1 className="text-2xl font-bold text-slate-900">{user?.name}</h1>
+          <p className="text-sm text-app-muted">Welcome back</p>
+          <h1 className="text-2xl font-bold text-app">{user?.name}</h1>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => dispatch(setCreateBoardOpen(true))}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={() => dispatch(setCreateBoardOpen(true))}>
             + New Board
           </Button>
-          <Button variant="danger" onClick={() => dispatch(logoutUser())}>
+          <Button className="w-full sm:w-auto" variant="danger" onClick={() => dispatch(logoutUser())}>
             Logout
           </Button>
         </div>
       </header>
 
-      <section className="mb-6 rounded-2xl bg-white/85 p-4 shadow-soft">
-        <h2 className="mb-3 text-lg font-semibold">Workspace Switcher</h2>
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-          <select
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2"
-            value={workspaceId}
-            onChange={(event) => setWorkspaceId(event.target.value)}
-          >
-            {workspaces.map((workspace) => (
-              <option key={workspace._id} value={workspace._id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-
+      <section className="mb-6 rounded-2xl border border-app bg-panel p-4 shadow-soft">
+        <h2 className="mb-3 text-lg font-semibold text-app">Workspace Tools</h2>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
           <Input
             placeholder="Create workspace"
             value={workspaceName}
             onChange={(event) => setWorkspaceName(event.target.value)}
           />
-          <Button onClick={onCreateWorkspace}>Add Workspace</Button>
+          <Button className="w-full md:w-auto" onClick={onCreateWorkspace}>
+            Add Workspace
+          </Button>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
-          {workspaceMeta?.total || 0} workspaces available
-        </p>
+        <p className="mt-2 text-xs text-app-muted">{workspaceMeta?.total || 0} workspaces available</p>
       </section>
 
       {recentBoards.length > 0 ? (
         <section className="mb-6">
-          <h2 className="mb-3 text-lg font-semibold text-slate-800">Recent Boards</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="mb-3 text-lg font-semibold text-app">Recent Boards</h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {recentBoards.map((board) => (
               <button
                 key={`recent-${board._id}`}
-                className="rounded-2xl p-4 text-left text-white shadow-soft"
+                className="min-h-28 rounded-2xl p-4 text-left text-white shadow-soft"
                 style={{ background: board.background?.value || '#0b78de' }}
                 onClick={() => openBoard(board._id)}
               >
@@ -160,26 +176,37 @@ function DashboardPage() {
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">Boards</h2>
-          {workspaceStatus === 'loading' ? <span className="text-xs text-slate-500">Loading...</span> : null}
+          <h2 className="text-lg font-semibold text-app">Boards</h2>
+          {workspaceStatus === 'loading' ? <span className="text-xs text-app-muted">Loading...</span> : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {workspaceStatus === 'loading' && boards.length === 0
             ? Array.from({ length: 6 }).map((_, idx) => (
                 <Skeleton key={`board-skeleton-${idx}`} className="h-28" />
               ))
-            : boards.map((board) => (
-                <button
-                  key={board._id}
-                  className="rounded-2xl p-4 text-left text-white shadow-soft transition hover:translate-y-[-2px]"
-                  style={{ background: board.background?.value || '#0b78de' }}
-                  onClick={() => openBoard(board._id)}
-                >
-                  <h3 className="text-lg font-semibold">{board.title}</h3>
-                  <p className="mt-3 text-xs opacity-90">{new Date(board.updatedAt).toLocaleDateString()}</p>
-                </button>
-              ))}
+            : boards.map((board) => {
+                const isFavorite = favoriteBoardIds.includes(board._id);
+                return (
+                  <div key={board._id} className="group relative rounded-2xl shadow-soft">
+                    <button
+                      className="min-h-28 w-full rounded-2xl p-4 text-left text-white transition group-hover:translate-y-[-2px]"
+                      style={{ background: board.background?.value || '#0b78de' }}
+                      onClick={() => openBoard(board._id)}
+                    >
+                      <h3 className="text-lg font-semibold">{board.title}</h3>
+                      <p className="mt-3 text-xs opacity-90">{new Date(board.updatedAt).toLocaleDateString()}</p>
+                    </button>
+                    <button
+                      className="absolute right-2 top-2 rounded-full bg-slate-950/35 px-2 py-1 text-xs font-semibold text-white"
+                      onClick={() => dispatch(toggleFavoriteBoard(board._id))}
+                      title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {isFavorite ? 'Unfav' : 'Fav'}
+                    </button>
+                  </div>
+                );
+              })}
         </div>
 
         <div ref={sentinelRef} className="h-8" />
@@ -194,29 +221,47 @@ function DashboardPage() {
             placeholder="Roadmap"
           />
 
-          <label className="flex items-center gap-2 text-sm">
-            <span>Background color</span>
-            <input
-              type="color"
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-app">Background Type</span>
+            <select
+              className="rounded-xl border border-app bg-panel px-3 py-2"
+              value={boardForm.backgroundType}
+              onChange={(event) => setBoardForm((prev) => ({ ...prev, backgroundType: event.target.value }))}
+            >
+              <option value="gradient">Gradient</option>
+              <option value="color">Color</option>
+              <option value="image">Image URL</option>
+            </select>
+          </label>
+
+          {boardForm.backgroundType === 'color' ? (
+            <label className="flex items-center gap-2 text-sm text-app">
+              <span>Color</span>
+              <input
+                type="color"
+                value={boardForm.backgroundValue.startsWith('#') ? boardForm.backgroundValue : '#0b78de'}
+                onChange={(event) =>
+                  setBoardForm((prev) => ({ ...prev, backgroundValue: event.target.value }))
+                }
+              />
+            </label>
+          ) : (
+            <Input
+              label={boardForm.backgroundType === 'image' ? 'Image URL' : 'Gradient CSS'}
               value={boardForm.backgroundValue}
               onChange={(event) =>
                 setBoardForm((prev) => ({ ...prev, backgroundValue: event.target.value }))
               }
             />
-          </label>
+          )}
 
           <Button className="w-full" onClick={onCreateBoard}>
             Create Board
           </Button>
         </div>
       </Modal>
-
-      
-    </main>
+    </AppShell>
   );
 }
 
 export default DashboardPage;
-
-
-

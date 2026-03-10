@@ -18,7 +18,7 @@ function FilterBar({ searchInputRef, onSearchChange }) {
   }, [currentBoard]);
 
   return (
-    <div className="mb-4 grid gap-3 rounded-2xl bg-white/80 p-4 shadow-soft backdrop-blur md:grid-cols-[1fr_220px_220px]">
+    <div className="sticky top-[4.5rem] z-20 mb-4 grid gap-3 rounded-2xl border border-app bg-panel p-3 shadow-soft md:top-20 md:p-4 lg:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,180px))]">
       <Input
         ref={searchInputRef}
         placeholder="Search cards, lists, comments..."
@@ -30,7 +30,7 @@ function FilterBar({ searchInputRef, onSearchChange }) {
       />
 
       <select
-        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+        className="rounded-xl border border-app bg-panel px-3 py-2 text-sm"
         value={filters.memberId}
         onChange={(event) => dispatch(setFilters({ memberId: event.target.value }))}
       >
@@ -43,7 +43,7 @@ function FilterBar({ searchInputRef, onSearchChange }) {
       </select>
 
       <select
-        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+        className="rounded-xl border border-app bg-panel px-3 py-2 text-sm"
         value={filters.labelColor}
         onChange={(event) => dispatch(setFilters({ labelColor: event.target.value }))}
       >
@@ -54,10 +54,20 @@ function FilterBar({ searchInputRef, onSearchChange }) {
           </option>
         ))}
       </select>
+
+      <select
+        className="rounded-xl border border-app bg-panel px-3 py-2 text-sm"
+        value={filters.dueDateStatus}
+        onChange={(event) => dispatch(setFilters({ dueDateStatus: event.target.value }))}
+      >
+        <option value="">Any Due Date</option>
+        <option value="overdue">Overdue</option>
+        <option value="soon">Due in 48h</option>
+        <option value="scheduled">Scheduled later</option>
+        <option value="none">No due date</option>
+      </select>
     </div>
   );
 }
 
 export default FilterBar;
-
-

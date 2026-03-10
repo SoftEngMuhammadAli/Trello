@@ -7,5 +7,5 @@ COPY scripts ./scripts
 COPY .env.example ./.env.example
 RUN npm install --omit=dev
 
-EXPOSE 5000
+EXPOSE 3030
 CMD ["node", "src/server.js"]

@@ -14,9 +14,9 @@ function AddListInline({ boardId }) {
   };
 
   return (
-    <div className="w-72 shrink-0 rounded-2xl bg-white/80 p-3 shadow-soft backdrop-blur">
+    <div className="w-[85vw] max-w-80 shrink-0 rounded-2xl border border-app bg-panel p-3 shadow-soft sm:w-80">
       <input
-        className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+        className="mb-2 w-full rounded-lg border border-app bg-panel px-3 py-2 text-sm text-app outline-none focus:border-brand-500"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         placeholder="Add another list"

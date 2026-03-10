@@ -6,7 +6,7 @@ export function connectSocket(accessToken) {
   if (!accessToken) return null;
   if (socket && socket.connected) return socket;
 
-  socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+  socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3030', {
     auth: { token: accessToken },
     transports: ['websocket'],
     withCredentials: true,
@@ -25,5 +25,3 @@ export function disconnectSocket() {
     socket = null;
   }
 }
-
-

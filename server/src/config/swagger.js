@@ -23,7 +23,7 @@ const options = {
       { name: 'Comments' },
       { name: 'Search' },
     ],
-    servers: [{ url: 'http://localhost:5000' }],
+    servers: [{ url: 'http://localhost:3030' }],
     components: {
       securitySchemes: {
         bearerAuth: {

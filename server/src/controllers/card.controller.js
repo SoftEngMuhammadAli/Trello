@@ -36,7 +36,7 @@ async function getListWithBoardAccess(listId, userId) {
 }
 
 const createCard = asyncHandler(async (req, res) => {
-  const { listId, title, description, labels, dueDate, members, cover, position } = req.body;
+  const { listId, title, description, labels, dueDate, members, cover, checklists, position } = req.body;
   const { list, board } = await getListWithBoardAccess(listId, req.user._id);
 
   let targetPosition = position;
@@ -55,6 +55,7 @@ const createCard = asyncHandler(async (req, res) => {
     dueDate: dueDate || null,
     members: members || [],
     cover: cover || '',
+    checklists: checklists || [],
   });
 
   await List.findByIdAndUpdate(list._id, { $addToSet: { cards: card._id } });
@@ -87,6 +88,7 @@ const updateCard = asyncHandler(async (req, res) => {
     'dueDate',
     'members',
     'cover',
+    'checklists',
     'archived',
   ];
 

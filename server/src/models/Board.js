@@ -16,8 +16,8 @@ const boardSchema = new mongoose.Schema(
     background: {
       type: {
         type: String,
-        enum: ['color', 'image'],
-        default: 'color',
+        enum: ['color', 'image', 'gradient'],
+        default: 'gradient',
       },
       value: { type: String, default: '#0b78de' },
     },

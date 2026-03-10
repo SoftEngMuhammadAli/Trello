@@ -1,7 +1,7 @@
 import Joi from 'joi';
 
 const backgroundSchema = Joi.object({
-  type: Joi.string().valid('color', 'image').required(),
+  type: Joi.string().valid('color', 'image', 'gradient').required(),
   value: Joi.string().required(),
 });
 

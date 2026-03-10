@@ -34,7 +34,7 @@ const createList = asyncHandler(async (req, res) => {
     targetPosition = lastList ? lastList.position + 1 : 0;
   }
 
-  const list = await List.create({ boardId, title, position: targetPosition, cards: [] });
+  const list = await List.create({ boardId, title, position: targetPosition, collapsed: false, cards: [] });
   await Board.findByIdAndUpdate(board._id, { $addToSet: { lists: list._id } });
   await pushBoardActivity(board._id, 'list.created', req.user._id, { listId: list._id, title });
   emitBoardEvent(req, board._id.toString(), 'list:created', { list });
@@ -47,7 +47,8 @@ const updateList = asyncHandler(async (req, res) => {
   if (!list) throw new ApiError(StatusCodes.NOT_FOUND, 'List not found');
 
   const board = await getBoardAndAssertMember(list.boardId, req.user._id);
-  list.title = req.body.title;
+  if (req.body.title !== undefined) list.title = req.body.title;
+  if (req.body.collapsed !== undefined) list.collapsed = req.body.collapsed;
   await list.save();
 
   await pushBoardActivity(board._id, 'list.updated', req.user._id, { listId: list._id, title: list.title });

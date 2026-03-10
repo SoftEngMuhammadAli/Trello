@@ -20,6 +20,24 @@ const attachmentSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const checklistItemSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    text: { type: String, required: true, trim: true, maxlength: 200 },
+    done: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+const checklistSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    items: [checklistItemSchema],
+  },
+  { _id: false },
+);
+
 const cardSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true, maxlength: 300 },
@@ -33,6 +51,7 @@ const cardSchema = new mongoose.Schema(
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     cover: { type: String, default: '' },
+    checklists: [checklistSchema],
     archived: { type: Boolean, default: false },
   },
   { timestamps: true },

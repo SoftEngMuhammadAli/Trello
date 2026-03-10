@@ -27,7 +27,7 @@ const createBoard = asyncHandler(async (req, res) => {
   const board = await Board.create({
     workspaceId,
     title,
-    background: background || { type: 'color', value: '#0b78de' },
+    background: background || { type: 'gradient', value: 'linear-gradient(120deg, #0b78de, #14b8a6)' },
     members: [...uniqueMembers],
     activityLog: [
       {
@@ -83,7 +83,7 @@ const getBoardFull = asyncHandler(async (req, res) => {
 
   const lists = await List.find({ boardId: board._id }).sort({ position: 1 }).lean();
   const listIds = lists.map((list) => list._id);
-  const cards = await Card.find({ listId: { $in: listIds }, archived: false })
+  const cards = await Card.find({ listId: { $in: listIds } })
     .sort({ position: 1 })
     .populate('members', 'name email avatar')
     .lean();

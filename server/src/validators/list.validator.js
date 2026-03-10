@@ -7,8 +7,9 @@ const createListSchema = Joi.object({
 });
 
 const updateListSchema = Joi.object({
-  title: Joi.string().min(1).max(120).required(),
-});
+  title: Joi.string().min(1).max(120),
+  collapsed: Joi.boolean(),
+}).min(1);
 
 const updateListPositionSchema = Joi.object({
   position: Joi.number().integer().min(0).required(),

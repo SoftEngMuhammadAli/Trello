@@ -29,8 +29,19 @@ const workspaceSlice = createSlice({
     status: 'idle',
     error: null,
     meta: null,
+    activeWorkspaceId:
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem('trello_clone_active_workspace') || ''
+        : '',
   },
-  reducers: {},
+  reducers: {
+    setActiveWorkspace(state, action) {
+      state.activeWorkspaceId = action.payload;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('trello_clone_active_workspace', action.payload || '');
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchWorkspaces.pending, (state) => {
@@ -41,6 +52,12 @@ const workspaceSlice = createSlice({
         const isFirstPage = action.payload.meta?.page === 1;
         state.items = isFirstPage ? action.payload.data : [...state.items, ...action.payload.data];
         state.meta = action.payload.meta;
+        if (!state.activeWorkspaceId && action.payload.data?.length > 0) {
+          state.activeWorkspaceId = action.payload.data[0]._id;
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('trello_clone_active_workspace', state.activeWorkspaceId);
+          }
+        }
       })
       .addCase(fetchWorkspaces.rejected, (state, action) => {
         state.status = 'failed';
@@ -48,8 +65,12 @@ const workspaceSlice = createSlice({
       })
       .addCase(createWorkspace.fulfilled, (state, action) => {
         state.items.unshift(action.payload);
+        if (!state.activeWorkspaceId) {
+          state.activeWorkspaceId = action.payload._id;
+        }
       });
   },
 });
 
+export const { setActiveWorkspace } = workspaceSlice.actions;
 export default workspaceSlice.reducer;

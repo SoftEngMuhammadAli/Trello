@@ -21,6 +21,7 @@ export function normalizeBoard(board) {
           cardsById[card._id] = {
             ...card,
             commentsData: card.commentsData || [],
+            checklists: card.checklists || [],
           };
           cardIds.push(card._id);
         });

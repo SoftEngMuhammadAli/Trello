@@ -32,6 +32,11 @@ function initSocket(server, clientUrl) {
       socket.leave(`board:${boardId}`);
     });
 
+    socket.on('board:typing', (payload) => {
+      if (!payload?.boardId) return;
+      socket.to(`board:${payload.boardId}`).emit('board:typing', payload);
+    });
+
     socket.on('disconnect', () => {
       // socket lifecycle cleanup is handled by socket.io internally.
     });

@@ -15,6 +15,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 function App() {
   const dispatch = useDispatch();
   const initialized = useSelector((state) => state.auth.initialized);
+  const theme = useSelector((state) => state.ui.theme);
 
   useEffect(() => {
     dispatch(bootstrapAuth());
@@ -25,6 +26,11 @@ function App() {
     window.addEventListener('auth:changed', handler);
     return () => window.removeEventListener('auth:changed', handler);
   }, [dispatch]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    window.localStorage.setItem('trello_clone_theme', theme);
+  }, [theme]);
 
   if (!initialized) {
     return (

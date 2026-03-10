@@ -3,7 +3,21 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: only light;
+  --app-bg: #f3f6fb;
+  --app-panel: rgba(255, 255, 255, 0.85);
+  --app-hover: rgba(15, 23, 42, 0.06);
+  --app-text: #0f172a;
+  --app-muted: #64748b;
+  --app-border: rgba(148, 163, 184, 0.35);
+}
+
+.dark {
+  --app-bg: #0b1220;
+  --app-panel: rgba(15, 23, 42, 0.82);
+  --app-hover: rgba(148, 163, 184, 0.16);
+  --app-text: #dbe8ff;
+  --app-muted: #94a3b8;
+  --app-border: rgba(148, 163, 184, 0.25);
 }
 
 body {
@@ -11,10 +25,11 @@ body {
   min-height: 100vh;
   font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at top right, rgba(20, 150, 255, 0.25), transparent 40%),
-    radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.14), transparent 40%),
-    #f4f7fb;
-  color: #0f172a;
+    radial-gradient(circle at top right, rgba(20, 150, 255, 0.22), transparent 36%),
+    radial-gradient(circle at 20% 85%, rgba(16, 185, 129, 0.16), transparent 42%),
+    var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
 * {
@@ -25,4 +40,42 @@ body {
   min-height: 100vh;
 }
 
+.bg-app {
+  background-color: transparent;
+}
 
+.bg-panel {
+  background-color: var(--app-panel);
+  backdrop-filter: blur(8px);
+}
+
+.border-app {
+  border-color: var(--app-border);
+}
+
+.text-app {
+  color: var(--app-text);
+}
+
+.text-app-muted {
+  color: var(--app-muted);
+}
+
+.hover\:bg-hover:hover {
+  background-color: var(--app-hover);
+}
+
+.modal-enter {
+  animation: modalEnter 160ms ease;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
