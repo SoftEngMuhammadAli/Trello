@@ -140,4 +140,6 @@ docker compose up --build
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+_*See the Documents:*_ > [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+---

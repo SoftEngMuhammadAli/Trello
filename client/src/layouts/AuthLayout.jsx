@@ -1,30 +1,7 @@
-﻿import { useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { loginUser } from '../features/auth/authSlice';
 
 function AuthLayout({ title, subtitle, children, footer }) {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [demoLoading, setDemoLoading] = useState(false);
-
-  const openDemoDashboard = async () => {
-    if (demoLoading) return;
-    setDemoLoading(true);
-    const result = await dispatch(
-      loginUser({ email: 'demo@trelloclone.dev', password: 'password123' }),
-    );
-    setDemoLoading(false);
-
-    if (loginUser.fulfilled.match(result)) {
-      toast.success('Demo session started');
-      navigate('/dashboard');
-      return;
-    }
-
-    toast.error(result.payload || 'Demo user unavailable. Run server seed first.');
-  };
 
   return (
     <div className="min-h-screen bg-app px-4 py-6 text-app sm:px-6 sm:py-10">
@@ -72,11 +49,10 @@ function AuthLayout({ title, subtitle, children, footer }) {
             {footer ? <div className="mt-5 text-sm text-app-muted">{footer}</div> : null}
             <div className="mt-4 text-center text-xs text-app-muted">
               <button
-                className="font-semibold text-accent underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={openDemoDashboard}
-                disabled={demoLoading}
+                className="font-semibold text-accent underline underline-offset-4"
+                onClick={() => navigate('/demo')}
               >
-                {demoLoading ? 'Opening demo...' : 'Open demo dashboard'}
+                Open demo dashboard
               </button>
             </div>
           </div>

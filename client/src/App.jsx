@@ -8,6 +8,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const DemoDashboardPage = lazy(() => import('./pages/DemoDashboardPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const BoardPage = lazy(() => import('./pages/BoardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -54,6 +55,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/demo" element={<DemoDashboardPage />} />
         <Route
           path="/dashboard"
           element={
@@ -85,5 +87,3 @@ function App() {
 }
 
 export default App;
-
-
