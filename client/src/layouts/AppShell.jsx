@@ -95,13 +95,18 @@ function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace
           }`}
         >
           <div className="flex h-20 items-center justify-between border-b border-app px-4">
-            <button className="flex items-center gap-3 text-left" onClick={() => navigate('/dashboard')}>
+            <button
+              className="flex items-center gap-3 text-left"
+              onClick={() => navigate('/dashboard')}
+            >
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-lg font-black text-white shadow-soft">
-                FL
+                {userNameInitial}
               </span>
               <span>
-                <span className="block text-2xl font-black tracking-tight">Flowllo</span>
-                <span className="block text-[11px] uppercase tracking-[0.2em] text-app-muted">Team Command</span>
+                <span className="block text-2xl font-black tracking-tight">Trello-Clone</span>
+                <span className="block text-[11px] uppercase tracking-[0.2em] text-app-muted">
+                  Team Command
+                </span>
               </span>
             </button>
             <button
@@ -115,7 +120,9 @@ function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace
           <div className="flex h-[calc(100vh-5rem)] flex-col">
             <div className="custom-scrollbar flex-1 space-y-5 overflow-auto px-3 py-4">
               <section className="rounded-2xl border border-app bg-panel-soft p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">Focused Today</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">
+                  Focused Today
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-xl border border-app bg-panel px-3 py-2">
                     <p className="text-xs text-app-muted">Boards</p>
@@ -146,7 +153,9 @@ function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace
               </nav>
 
               <section>
-                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Spaces</h2>
+                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">
+                  Spaces
+                </h2>
                 <div className="space-y-1">
                   {workspaces.map((workspace) => (
                     <button
@@ -168,13 +177,18 @@ function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace
               </section>
 
               <section>
-                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Favorite Boards</h2>
+                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">
+                  Favorite Boards
+                </h2>
                 <div className="space-y-1">
                   {favoriteBoards.length === 0 ? (
                     <p className="px-3 py-2 text-xs text-app-muted">No favorites yet.</p>
                   ) : (
                     favoriteBoards.map((board) => (
-                      <div key={`fav-${board._id}`} className="flex items-center gap-2 rounded-xl border border-app bg-panel-soft p-2">
+                      <div
+                        key={`fav-${board._id}`}
+                        className="flex items-center gap-2 rounded-xl border border-app bg-panel-soft p-2"
+                      >
                         <Link
                           to={`/board/${board._id}`}
                           className="min-w-0 flex-1 text-sm font-semibold"
@@ -195,7 +209,9 @@ function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace
               </section>
 
               <section>
-                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Recent Boards</h2>
+                <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">
+                  Recent Boards
+                </h2>
                 <div className="space-y-1">
                   {recentBoards.length === 0 ? (
                     <p className="px-3 py-2 text-xs text-app-muted">No recent boards.</p>

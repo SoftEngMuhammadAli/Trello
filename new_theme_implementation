@@ -1662,7 +1662,7 @@ function AppShell({ children, workspaceId, onWorkspaceChange, title = 'Workspace
                 FL
               </span>
               <span>
-                <span className="block text-2xl font-black tracking-tight">Flowllo</span>
+                <span className="block text-2xl font-black tracking-tight">Trello-Clone</span>
                 <span className="block text-[11px] uppercase tracking-[0.2em] text-app-muted">Team Command</span>
               </span>
             </button>
@@ -1914,7 +1914,7 @@ function AuthLayout({ title, subtitle, children, footer }) {
             <div>
               <p className="inline-flex items-center gap-2 rounded-full border border-app bg-panel-soft px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted">
                 <span className="app-dot" />
-                Flowllo Platform
+                Trello-Clone Platform
               </p>
               <h2 className="mt-7 text-5xl font-black leading-tight tracking-tight text-app">
                 Work orchestration,

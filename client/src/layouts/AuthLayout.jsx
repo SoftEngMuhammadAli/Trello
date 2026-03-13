@@ -14,7 +14,7 @@ function AuthLayout({ title, subtitle, children, footer }) {
             <div>
               <p className="inline-flex items-center gap-2 rounded-full border border-app bg-panel-soft px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-muted">
                 <span className="app-dot" />
-                Flowllo Platform
+                Trello-Clone Platform
               </p>
               <h2 className="mt-7 text-5xl font-black leading-tight tracking-tight text-app">
                 Work orchestration,
@@ -22,15 +22,26 @@ function AuthLayout({ title, subtitle, children, footer }) {
                 but beautiful.
               </h2>
               <p className="mt-5 max-w-xl text-base text-app-muted">
-                Plan projects, move tasks at speed, and collaborate in real time with a board workspace designed for focus.
+                Plan projects, move tasks at speed, and collaborate in real time with a board
+                workspace designed for focus.
               </p>
             </div>
 
             <div className="rounded-2xl border border-app bg-panel-soft p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">Included</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">
+                Included
+              </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                {['Live board updates', 'Filters and search', 'Rich card details', 'Member workflows'].map((item) => (
-                  <div key={item} className="rounded-lg border border-app bg-panel px-3 py-2 font-medium text-app">
+                {[
+                  'Live board updates',
+                  'Filters and search',
+                  'Rich card details',
+                  'Member workflows',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-lg border border-app bg-panel px-3 py-2 font-medium text-app"
+                  >
                     {item}
                   </div>
                 ))}

@@ -39,10 +39,34 @@ const previewBoards = [
 ];
 
 const previewTasks = [
-  { id: 'task-1', title: 'Finalize pricing page copy', column: 'Review', owner: 'Aisha', due: 'Today' },
-  { id: 'task-2', title: 'QA checklist for release candidate', column: 'Doing', owner: 'Marcus', due: 'Tomorrow' },
-  { id: 'task-3', title: 'Ship onboarding tooltip updates', column: 'Ready', owner: 'Nina', due: 'Mar 14' },
-  { id: 'task-4', title: 'Prepare investor update deck', column: 'Backlog', owner: 'Ray', due: 'Mar 18' },
+  {
+    id: 'task-1',
+    title: 'Finalize pricing page copy',
+    column: 'Review',
+    owner: 'Aisha',
+    due: 'Today',
+  },
+  {
+    id: 'task-2',
+    title: 'QA checklist for release candidate',
+    column: 'Doing',
+    owner: 'Marcus',
+    due: 'Tomorrow',
+  },
+  {
+    id: 'task-3',
+    title: 'Ship onboarding tooltip updates',
+    column: 'Ready',
+    owner: 'Nina',
+    due: 'Mar 14',
+  },
+  {
+    id: 'task-4',
+    title: 'Prepare investor update deck',
+    column: 'Backlog',
+    owner: 'Ray',
+    due: 'Mar 18',
+  },
 ];
 
 const previewActivity = [
@@ -62,41 +86,60 @@ function DemoDashboardPage() {
                 FL
               </span>
               <div>
-                <p className="text-2xl font-black tracking-tight">Flowllo</p>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-app-muted">Demo Preview</p>
+                <p className="text-2xl font-black tracking-tight">Trello-Clone</p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-app-muted">
+                  Demo Preview
+                </p>
               </div>
             </div>
 
             <div className="mt-6 rounded-2xl border border-app bg-panel p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">Read only</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-app-muted">
+                Read only
+              </p>
               <h1 className="mt-2 text-2xl font-black tracking-tight">Public dashboard preview</h1>
               <p className="mt-2 text-sm text-app-muted">
-                This page is open to unauthenticated visitors. Sign in to create boards, move cards, and collaborate live.
+                This page is open to unauthenticated visitors. Sign in to create boards, move cards,
+                and collaborate live.
               </p>
             </div>
 
             <section className="mt-6">
-              <p className="px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Sample spaces</p>
+              <p className="px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">
+                Sample spaces
+              </p>
               <div className="mt-2 space-y-2">
                 {previewWorkspaces.map((workspace) => (
-                  <div key={workspace.id} className="rounded-2xl border border-app bg-panel px-4 py-3">
+                  <div
+                    key={workspace.id}
+                    className="rounded-2xl border border-app bg-panel px-4 py-3"
+                  >
                     <p className="text-sm font-semibold">{workspace.name}</p>
-                    <p className="mt-1 text-xs text-app-muted">{workspace.projects} active projects</p>
+                    <p className="mt-1 text-xs text-app-muted">
+                      {workspace.projects} active projects
+                    </p>
                   </div>
                 ))}
               </div>
             </section>
 
             <section className="mt-6">
-              <p className="px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">Why sign in</p>
+              <p className="px-2 text-xs font-bold uppercase tracking-[0.14em] text-app-muted">
+                Why sign in
+              </p>
               <div className="mt-2 space-y-2">
-                {['Realtime board updates', 'Workspace and member management', 'Card comments, files, and search'].map(
-                  (item) => (
-                    <div key={item} className="rounded-2xl border border-app bg-panel px-4 py-3 text-sm font-medium">
-                      {item}
-                    </div>
-                  ),
-                )}
+                {[
+                  'Realtime board updates',
+                  'Workspace and member management',
+                  'Card comments, files, and search',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-app bg-panel px-4 py-3 text-sm font-medium"
+                  >
+                    {item}
+                  </div>
+                ))}
               </div>
             </section>
           </aside>
@@ -109,9 +152,12 @@ function DemoDashboardPage() {
                     <span className="app-dot" />
                     Workspace overview
                   </p>
-                  <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">See the product before you sign in</h2>
+                  <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                    See the product before you sign in
+                  </h2>
                   <p className="mt-2 max-w-2xl text-sm text-app-muted sm:text-base">
-                    Explore the structure of the dashboard, boards, and daily execution flow. Interactive actions stay locked until authentication.
+                    Explore the structure of the dashboard, boards, and daily execution flow.
+                    Interactive actions stay locked until authentication.
                   </p>
                 </div>
 
@@ -135,7 +181,9 @@ function DemoDashboardPage() {
                   { label: 'Automations', value: '12' },
                 ].map((stat) => (
                   <div key={stat.label} className="rounded-2xl border border-app bg-panel p-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-app-muted">{stat.label}</p>
+                    <p className="text-xs uppercase tracking-[0.14em] text-app-muted">
+                      {stat.label}
+                    </p>
                     <p className="mt-2 text-3xl font-black tracking-tight">{stat.value}</p>
                   </div>
                 ))}
@@ -145,7 +193,9 @@ function DemoDashboardPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-xl font-black tracking-tight">Featured boards</h3>
-                    <p className="mt-1 text-sm text-app-muted">Representative projects shown in preview mode.</p>
+                    <p className="mt-1 text-sm text-app-muted">
+                      Representative projects shown in preview mode.
+                    </p>
                   </div>
                   <span className="rounded-full border border-app bg-panel-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-app-muted">
                     Demo only
@@ -174,7 +224,9 @@ function DemoDashboardPage() {
               <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-3xl border border-app bg-panel p-4 sm:p-5">
                   <h3 className="text-xl font-black tracking-tight">Today on the team</h3>
-                  <p className="mt-1 text-sm text-app-muted">A snapshot of the task view available after login.</p>
+                  <p className="mt-1 text-sm text-app-muted">
+                    A snapshot of the task view available after login.
+                  </p>
 
                   <div className="mt-4 overflow-hidden rounded-2xl border border-app">
                     <table className="w-full border-collapse text-sm">
@@ -205,7 +257,10 @@ function DemoDashboardPage() {
                     <h3 className="text-xl font-black tracking-tight">Recent activity</h3>
                     <div className="mt-4 space-y-3">
                       {previewActivity.map((item) => (
-                        <div key={item} className="rounded-2xl border border-app bg-panel-soft px-4 py-3">
+                        <div
+                          key={item}
+                          className="rounded-2xl border border-app bg-panel-soft px-4 py-3"
+                        >
                           <p className="text-sm font-medium">{item}</p>
                         </div>
                       ))}
@@ -215,7 +270,8 @@ function DemoDashboardPage() {
                   <div className="rounded-3xl border border-app bg-panel p-4 sm:p-5">
                     <h3 className="text-xl font-black tracking-tight">Unlock the full workspace</h3>
                     <p className="mt-2 text-sm text-app-muted">
-                      Authentication enables editing, drag and drop, comments, uploads, filters, and realtime collaboration.
+                      Authentication enables editing, drag and drop, comments, uploads, filters, and
+                      realtime collaboration.
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Link to="/signup">
